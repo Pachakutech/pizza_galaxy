@@ -11,10 +11,15 @@ import SpriteKit
 class BlackHole: SKSpriteNode {
     let jetStrength: CGFloat = 50.0
     let jetRange: CGFloat = 100.0
+    var zDepth: CGFloat = 100.0
     
     init() {
         let texture = SKTexture(imageNamed: "blackhole_placeholder")
-        print("BlackHole texture: \(texture.description)")
+        if texture.size() != .zero {
+            print("BlackHole texture loaded: \(texture.description)")
+        } else {
+            print("Error: BlackHole texture is nil")
+        }
         super.init(texture: texture, color: .clear, size: CGSize(width: 20, height: 20))
         physicsBody = SKPhysicsBody(circleOfRadius: size.width / 2)
         physicsBody?.isDynamic = false
@@ -36,6 +41,7 @@ class BlackHole: SKSpriteNode {
     }
     
     func applyJetForce(to spaceship: Spaceship) {
-        spaceship.applyJetForce(from: self)
+        let direction = CGVector(dx: position.x - spaceship.position.x, dy: position.y - spaceship.position.y)
+        spaceship.applyJetForce(from: self, direction: direction)
     }
 }

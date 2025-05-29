@@ -5,7 +5,6 @@
 //  Created by Pachakutech on 5/27/25.
 //
 
-
 import SpriteKit
 
 @MainActor
@@ -15,7 +14,11 @@ class Spaceship: SKSpriteNode {
     
     init() {
         let texture = SKTexture(imageNamed: "spaceship_placeholder")
-        print("Spaceship texture: \(texture.description)")
+        if texture.size() != .zero {
+            print("Spaceship texture loaded: \(texture.description)")
+        } else {
+            print("Error: Spaceship texture is nil")
+        }
         super.init(texture: texture, color: .clear, size: CGSize(width: 30, height: 30))
         physicsBody = SKPhysicsBody(rectangleOf: size)
         physicsBody?.mass = 1.0
@@ -30,23 +33,24 @@ class Spaceship: SKSpriteNode {
         fatalError("init(coder:) has not been implemented")
     }
     
-    func adjustSail(touchLocation: CGPoint, sceneSize: CGSize) {
+    func adjustSailRudder(touchLocation: CGPoint, sceneSize: CGSize) {
         sailAngle = touchLocation.y / sceneSize.height
         rudderAngle = (touchLocation.x / sceneSize.width) * 2 - 1
     }
     
     func adjustRudder(delta: Double) {
+        print("Crown delta: \(delta)")
         rudderAngle = min(max(rudderAngle + CGFloat(delta), -1.0), 1.0)
     }
     
-    func applyJetForce(from blackHole: BlackHole) {
+    func applyJetForce(from blackHole: BlackHole, direction: CGVector) {
         let distance = position.distance(to: blackHole.position)
-        if distance < blackHole.jetRange {
-            let direction = CGVector(dx: position.x - blackHole.position.x, dy: position.y - blackHole.position.y)
+        if distance < blackHole.jetRange * blackHole.xScale { // Use xScale
             let forceMagnitude = blackHole.jetStrength / max(distance, 1.0) * sailAngle
             let force = CGVector(dx: direction.dx * forceMagnitude * (1 - abs(rudderAngle)),
-                                dy: direction.dy * forceMagnitude * (1 - abs(rudderAngle)))
+                                 dy: direction.dy * forceMagnitude * (1 - abs(rudderAngle)))
             physicsBody?.applyForce(force)
+            print("Applied jet force: \(force) from black hole at: \(blackHole.position)")
         }
     }
 }

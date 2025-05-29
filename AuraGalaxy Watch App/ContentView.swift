@@ -12,12 +12,15 @@ import WatchKit
 struct ContentView: View {
     @StateObject private var gameScene = GameScene(size: WKInterfaceDevice.current().screenBounds.size)
     @State private var gameWon = false
-    @State private var crownValue: Double = 0.0 // Tracks crown rotation
+    @State private var crownValue: Double = 0.0
 
     var body: some View {
         ZStack {
             SpriteView(scene: gameScene)
                 .ignoresSafeArea()
+                .onAppear {
+                    print("SpriteView appeared, scene size: \(gameScene.size)")
+                }
             if gameWon {
                 Text("You Win!")
                     .font(.title)
@@ -28,7 +31,9 @@ struct ContentView: View {
         .gesture(
             TapGesture()
                 .onEnded { _ in
-                    let tapLocation = CGPoint(x: gameScene.size.width / 2, y: gameScene.size.height / 2)
+                    let isLeft = Bool.random()
+                    let tapLocation = CGPoint(x: gameScene.size.width * (isLeft ? 0.25 : 0.75), y: gameScene.size.height / 2)
+                    print("Tap at: \(tapLocation)")
                     gameScene.handleTap(at: tapLocation)
                 }
         )
@@ -38,9 +43,11 @@ struct ContentView: View {
             gameScene.spaceship.adjustRudder(delta: delta * 0.1)
         }
         .onChange(of: gameScene.spaceshipPosition) { newPosition, _ in
-            let center = CGPoint(x: gameScene.size.width / 2, y: gameScene.size.height / 2)
-            if newPosition.distance(to: center) < 20 {
-                gameWon = true
+            for blackHole in gameScene.blackHoles {
+                if blackHole.zDepth < 10 && newPosition.distance(to: blackHole.position) < 30 {
+                    gameWon = true
+                    print("Win condition met")
+                }
             }
         }
     }
