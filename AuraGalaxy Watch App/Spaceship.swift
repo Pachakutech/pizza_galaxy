@@ -10,7 +10,6 @@ import SpriteKit
 @MainActor
 class Spaceship: SKSpriteNode {
     private var sailAngle: CGFloat = 0.0
-    private var rudderAngle: CGFloat = 0.0
     
     init() {
         let texture = SKTexture(imageNamed: "spaceship_placeholder")
@@ -35,20 +34,24 @@ class Spaceship: SKSpriteNode {
     
     func adjustSailRudder(touchLocation: CGPoint, sceneSize: CGSize) {
         sailAngle = touchLocation.y / sceneSize.height
-        rudderAngle = (touchLocation.x / sceneSize.width) * 2 - 1
+        // Horizontal movement via tap
+        let targetX = touchLocation.x
+        let deltaX = (targetX - position.x) * 0.1
+        physicsBody?.applyImpulse(CGVector(dx: deltaX, dy: 0))
     }
     
-    func adjustRudder(delta: Double) {
+    func adjustVerticalPosition(delta: Double, sceneSize: CGSize) {
         print("Crown delta: \(delta)")
-        rudderAngle = min(max(rudderAngle + CGFloat(delta), -1.0), 1.0)
+        let newY = position.y + CGFloat(delta) * 50 // Sensitivity
+        position.y = min(max(newY, sceneSize.height * 0.1), sceneSize.height * 0.5) // Bounds
     }
     
     func applyJetForce(from blackHole: BlackHole, direction: CGVector) {
         let distance = position.distance(to: blackHole.position)
-        if distance < blackHole.jetRange * blackHole.xScale { // Use xScale
+        if distance < blackHole.jetRange * blackHole.xScale {
             let forceMagnitude = blackHole.jetStrength / max(distance, 1.0) * sailAngle
-            let force = CGVector(dx: direction.dx * forceMagnitude * (1 - abs(rudderAngle)),
-                                 dy: direction.dy * forceMagnitude * (1 - abs(rudderAngle)))
+            let force = CGVector(dx: direction.dx * forceMagnitude,
+                                 dy: direction.dy * forceMagnitude)
             physicsBody?.applyForce(force)
             print("Applied jet force: \(force) from black hole at: \(blackHole.position)")
         }

@@ -12,6 +12,8 @@ class BlackHole: SKSpriteNode {
     let jetStrength: CGFloat = 50.0
     let jetRange: CGFloat = 100.0
     var zDepth: CGFloat = 100.0
+    var direction: CGFloat = 0 // 1 = top, -1 = bottom
+    var initialX: CGFloat = 0
     
     init() {
         let texture = SKTexture(imageNamed: "blackhole_placeholder")
@@ -26,13 +28,27 @@ class BlackHole: SKSpriteNode {
         physicsBody?.categoryBitMask = 2
         physicsBody?.collisionBitMask = 1
         physicsBody?.contactTestBitMask = 1
-        if let jetEmitter = SKEmitterNode(fileNamed: "JetEffect") {
-            print("JetEffect loaded successfully")
-            jetEmitter.position = CGPoint(x: 0, y: size.height / 2)
-            jetEmitter.zPosition = 1
-            addChild(jetEmitter)
+        
+        // Top emitter (upward)
+        if let topEmitter = SKEmitterNode(fileNamed: "JetEffect") {
+            print("Top JetEffect loaded")
+            topEmitter.position = CGPoint(x: 0, y: size.height / 2) // Top
+            topEmitter.zRotation = 0 // Upward (assuming JetEffect emits up)
+            topEmitter.zPosition = 1
+            addChild(topEmitter)
         } else {
-            print("Error: Failed to load JetEffect.sks")
+            print("Error: Failed to load top JetEffect.sks")
+        }
+        
+        // Bottom emitter (downward)
+        if let bottomEmitter = SKEmitterNode(fileNamed: "JetEffect") {
+            print("Bottom JetEffect loaded")
+            bottomEmitter.position = CGPoint(x: 0, y: -size.height / 2) // Bottom
+            bottomEmitter.zRotation = .pi // Downward (180° rotation)
+            bottomEmitter.zPosition = 1
+            addChild(bottomEmitter)
+        } else {
+            print("Error: Failed to load bottom JetEffect.sks")
         }
     }
     

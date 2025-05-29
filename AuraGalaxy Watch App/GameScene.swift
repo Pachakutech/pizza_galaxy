@@ -68,17 +68,19 @@ class GameScene: SKScene, ObservableObject {
     
     private func spawnBlackHoles() {
         print("Spawning black holes")
-        blackHoles.removeAll() // Clear existing for safety
+        blackHoles.removeAll()
         for _ in 0..<3 {
             let blackHole = BlackHole()
-            blackHole.position = CGPoint(x: CGFloat.random(in: size.width * 0.2...size.width * 0.8),
-                                        y: size.height + 100)
+            let initialX = CGFloat.random(in: size.width * 0.2...size.width * 0.8) // Random x
+            blackHole.position = CGPoint(x: initialX, y: size.height / 2)
+            blackHole.initialX = initialX // Store initial x
             blackHole.zPosition = -1
-            blackHole.setScale(0.2)
+            blackHole.setScale(0.05)
             blackHole.zDepth = 100
+            blackHole.direction = Bool.random() ? 1 : -1
             blackHoles.append(blackHole)
             addChild(blackHole)
-            print("Black hole added at: \(blackHole.position), zDepth: \(blackHole.zDepth)")
+            print("Black hole added at: \(blackHole.position), zDepth: \(blackHole.zDepth), scale: \(blackHole.xScale), direction: \(blackHole.direction)")
         }
     }
     
@@ -90,19 +92,21 @@ class GameScene: SKScene, ObservableObject {
     override func update(_ currentTime: TimeInterval) {
         if let camera = camera {
             camera.position = CGPoint(x: spaceship.position.x, y: spaceship.position.y + size.height * 0.3)
+            print("Camera position: \(camera.position)")
         }
         
         for blackHole in blackHoles {
-            blackHole.zDepth -= 2
+            blackHole.zDepth -= 100 / 180
             if blackHole.zDepth <= 0 {
                 blackHole.zDepth = 100
-                blackHole.position = CGPoint(x: CGFloat.random(in: size.width * 0.2...size.width * 0.8),
-                                            y: size.height + 100)
-                blackHole.setScale(0.2)
+                blackHole.position = CGPoint(x: blackHole.initialX, y: size.height / 2) // Reuse initial x
+                blackHole.setScale(0.05)
+                blackHole.direction = Bool.random() ? 1 : -1
             } else {
-                let scale = 0.2 + (1 - blackHole.zDepth / 100) * 0.8
+                let scale = 0.05 + (1 - blackHole.zDepth / 100) * 0.95
                 blackHole.setScale(scale)
-                blackHole.position.y = size.height - (size.height * 0.8 * (1 - blackHole.zDepth / 100))
+                let targetY = blackHole.direction == 1 ? size.height : 0
+                blackHole.position.y = size.height / 2 + (targetY - size.height / 2) * (1 - blackHole.zDepth / 100)
             }
             blackHole.applyJetForce(to: spaceship)
         }
@@ -111,8 +115,10 @@ class GameScene: SKScene, ObservableObject {
 }
 
 extension GameScene: SKPhysicsContactDelegate {
-    func didBegin(_ contact: SKPhysicsContact) {
-        // Handle collisions
+    nonisolated func didBegin(_ contact: SKPhysicsContact) {
+        Task { @MainActor in
+            print("Collision detected: \(contact.bodyA.node?.name ?? "unknown") and \(contact.bodyB.node?.name ?? "unknown")")
+        }
     }
 }
 

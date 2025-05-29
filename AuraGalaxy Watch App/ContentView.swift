@@ -29,18 +29,17 @@ struct ContentView: View {
             }
         }
         .gesture(
-            TapGesture()
-                .onEnded { _ in
-                    let isLeft = Bool.random()
-                    let tapLocation = CGPoint(x: gameScene.size.width * (isLeft ? 0.25 : 0.75), y: gameScene.size.height / 2)
-                    print("Tap at: \(tapLocation)")
-                    gameScene.handleTap(at: tapLocation)
+            DragGesture(minimumDistance: 0)
+                .onEnded { value in
+                    let location = value.location
+                    print("Tap at: \(location)")
+                    gameScene.handleTap(at: location)
                 }
         )
         .digitalCrownRotation($crownValue)
         .onChange(of: crownValue) { newValue, oldValue in
             let delta = newValue - oldValue
-            gameScene.spaceship.adjustRudder(delta: delta * 0.1)
+            gameScene.spaceship.adjustVerticalPosition(delta: delta, sceneSize: gameScene.size)
         }
         .onChange(of: gameScene.spaceshipPosition) { newPosition, _ in
             for blackHole in gameScene.blackHoles {
