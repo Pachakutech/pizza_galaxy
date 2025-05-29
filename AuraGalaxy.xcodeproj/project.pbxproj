@@ -7,17 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		55B791A32DE6319A00E5EA12 /* AuraGalaxy Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 55B791A22DE6319A00E5EA12 /* AuraGalaxy Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		55B791DE2DE7C2CB00E5EA12 /* SpriteKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 55B791DD2DE7C2CB00E5EA12 /* SpriteKit.framework */; };
+		55B791E02DE7C6B800E5EA12 /* Combine.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 55B791DF2DE7C6B800E5EA12 /* Combine.framework */; };
+		55B791E22DE7D0E700E5EA12 /* WatchKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 55B791E12DE7D0E700E5EA12 /* WatchKit.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		55B791A42DE6319A00E5EA12 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 55B791962DE6319900E5EA12 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 55B791A12DE6319A00E5EA12;
-			remoteInfo = "AuraGalaxy Watch App";
-		};
 		55B791B22DE6319C00E5EA12 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 55B791962DE6319900E5EA12 /* Project object */;
@@ -34,25 +29,13 @@
 		};
 /* End PBXContainerItemProxy section */
 
-/* Begin PBXCopyFilesBuildPhase section */
-		55B791C82DE6319C00E5EA12 /* Embed Watch Content */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
-			dstSubfolderSpec = 16;
-			files = (
-				55B791A32DE6319A00E5EA12 /* AuraGalaxy Watch App.app in Embed Watch Content */,
-			);
-			name = "Embed Watch Content";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXCopyFilesBuildPhase section */
-
 /* Begin PBXFileReference section */
-		55B7919C2DE6319A00E5EA12 /* AuraGalaxy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AuraGalaxy.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		55B791A22DE6319A00E5EA12 /* AuraGalaxy Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "AuraGalaxy Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		55B791B12DE6319C00E5EA12 /* AuraGalaxy Watch AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "AuraGalaxy Watch AppTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		55B791BB2DE6319C00E5EA12 /* AuraGalaxy Watch AppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "AuraGalaxy Watch AppUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		55B791DD2DE7C2CB00E5EA12 /* SpriteKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SpriteKit.framework; path = Platforms/WatchOS.platform/Developer/SDKs/WatchOS11.4.sdk/System/Library/Frameworks/SpriteKit.framework; sourceTree = DEVELOPER_DIR; };
+		55B791DF2DE7C6B800E5EA12 /* Combine.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Combine.framework; path = Platforms/WatchOS.platform/Developer/SDKs/WatchOS11.4.sdk/System/Library/Frameworks/Combine.framework; sourceTree = DEVELOPER_DIR; };
+		55B791E12DE7D0E700E5EA12 /* WatchKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WatchKit.framework; path = Platforms/WatchOS.platform/Developer/SDKs/WatchOS11.4.sdk/System/Library/Frameworks/WatchKit.framework; sourceTree = DEVELOPER_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -78,6 +61,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				55B791E22DE7D0E700E5EA12 /* WatchKit.framework in Frameworks */,
+				55B791E02DE7C6B800E5EA12 /* Combine.framework in Frameworks */,
+				55B791DE2DE7C2CB00E5EA12 /* SpriteKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -104,6 +90,7 @@
 				55B791A62DE6319A00E5EA12 /* AuraGalaxy Watch App */,
 				55B791B42DE6319C00E5EA12 /* AuraGalaxy Watch AppTests */,
 				55B791BE2DE6319C00E5EA12 /* AuraGalaxy Watch AppUITests */,
+				55B791DC2DE7C2CB00E5EA12 /* Frameworks */,
 				55B7919D2DE6319A00E5EA12 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -111,7 +98,6 @@
 		55B7919D2DE6319A00E5EA12 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				55B7919C2DE6319A00E5EA12 /* AuraGalaxy.app */,
 				55B791A22DE6319A00E5EA12 /* AuraGalaxy Watch App.app */,
 				55B791B12DE6319C00E5EA12 /* AuraGalaxy Watch AppTests.xctest */,
 				55B791BB2DE6319C00E5EA12 /* AuraGalaxy Watch AppUITests.xctest */,
@@ -119,28 +105,19 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		55B791DC2DE7C2CB00E5EA12 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				55B791E12DE7D0E700E5EA12 /* WatchKit.framework */,
+				55B791DF2DE7C6B800E5EA12 /* Combine.framework */,
+				55B791DD2DE7C2CB00E5EA12 /* SpriteKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		55B7919B2DE6319A00E5EA12 /* AuraGalaxy */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 55B791C92DE6319C00E5EA12 /* Build configuration list for PBXNativeTarget "AuraGalaxy" */;
-			buildPhases = (
-				55B7919A2DE6319A00E5EA12 /* Resources */,
-				55B791C82DE6319C00E5EA12 /* Embed Watch Content */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				55B791A52DE6319A00E5EA12 /* PBXTargetDependency */,
-			);
-			name = AuraGalaxy;
-			packageProductDependencies = (
-			);
-			productName = AuraGalaxy;
-			productReference = 55B7919C2DE6319A00E5EA12 /* AuraGalaxy.app */;
-			productType = "com.apple.product-type.application.watchapp2-container";
-		};
 		55B791A12DE6319A00E5EA12 /* AuraGalaxy Watch App */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 55B791C52DE6319C00E5EA12 /* Build configuration list for PBXNativeTarget "AuraGalaxy Watch App" */;
@@ -219,9 +196,6 @@
 				LastSwiftUpdateCheck = 1630;
 				LastUpgradeCheck = 1630;
 				TargetAttributes = {
-					55B7919B2DE6319A00E5EA12 = {
-						CreatedOnToolsVersion = 16.3;
-					};
 					55B791A12DE6319A00E5EA12 = {
 						CreatedOnToolsVersion = 16.3;
 					};
@@ -249,7 +223,6 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				55B7919B2DE6319A00E5EA12 /* AuraGalaxy */,
 				55B791A12DE6319A00E5EA12 /* AuraGalaxy Watch App */,
 				55B791B02DE6319C00E5EA12 /* AuraGalaxy Watch AppTests */,
 				55B791BA2DE6319C00E5EA12 /* AuraGalaxy Watch AppUITests */,
@@ -258,13 +231,6 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		55B7919A2DE6319A00E5EA12 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		55B791A02DE6319A00E5EA12 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -313,11 +279,6 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		55B791A52DE6319A00E5EA12 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 55B791A12DE6319A00E5EA12 /* AuraGalaxy Watch App */;
-			targetProxy = 55B791A42DE6319A00E5EA12 /* PBXContainerItemProxy */;
-		};
 		55B791B32DE6319C00E5EA12 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 55B791A12DE6319A00E5EA12 /* AuraGalaxy Watch App */;
@@ -506,37 +467,6 @@
 			};
 			name = Release;
 		};
-		55B791CA2DE6319C00E5EA12 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = H5ZDC4Y336;
-				INFOPLIST_KEY_CFBundleDisplayName = AuraGalaxy;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.pachakutech.AuraGalaxy;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				SWIFT_VERSION = 5.0;
-			};
-			name = Debug;
-		};
-		55B791CB2DE6319C00E5EA12 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = H5ZDC4Y336;
-				INFOPLIST_KEY_CFBundleDisplayName = AuraGalaxy;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.pachakutech.AuraGalaxy;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				SWIFT_VERSION = 5.0;
-				VALIDATE_PRODUCT = YES;
-			};
-			name = Release;
-		};
 		55B791CD2DE6319C00E5EA12 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -634,15 +564,6 @@
 			buildConfigurations = (
 				55B791C62DE6319C00E5EA12 /* Debug */,
 				55B791C72DE6319C00E5EA12 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		55B791C92DE6319C00E5EA12 /* Build configuration list for PBXNativeTarget "AuraGalaxy" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				55B791CA2DE6319C00E5EA12 /* Debug */,
-				55B791CB2DE6319C00E5EA12 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
