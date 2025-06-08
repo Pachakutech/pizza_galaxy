@@ -9,7 +9,7 @@ import SpriteKit
 
 @MainActor
 class Spaceship: SKSpriteNode {
-    private var sailAngle: CGFloat = 0.0
+    private var sailAngle: CGFloat = 0.5
     
     init() {
         let texture = SKTexture(imageNamed: "spaceship_placeholder")
@@ -24,7 +24,7 @@ class Spaceship: SKSpriteNode {
         physicsBody?.friction = 0.0
         physicsBody?.linearDamping = 0.1
         physicsBody?.categoryBitMask = 1
-        physicsBody?.collisionBitMask = 2
+        physicsBody?.collisionBitMask = 0
         physicsBody?.contactTestBitMask = 2
     }
     
@@ -34,26 +34,28 @@ class Spaceship: SKSpriteNode {
     
     func adjustSailRudder(touchLocation: CGPoint, sceneSize: CGSize) {
         sailAngle = touchLocation.y / sceneSize.height
-        // Horizontal movement via tap
-        let targetX = touchLocation.x
-        let deltaX = (targetX - position.x) * 0.1
-        physicsBody?.applyImpulse(CGVector(dx: deltaX, dy: 0))
+        zRotation = .pi / 2 + sailAngle * .pi // 90° to 270°
+        print("Set sailAngle: \(sailAngle), rotation: \(zRotation) radians (\(zRotation * 180 / .pi)°)")
     }
     
     func adjustVerticalPosition(delta: Double, sceneSize: CGSize) {
-        print("Crown delta: \(delta)")
-        let newY = position.y + CGFloat(delta) * 50 // Sensitivity
-        position.y = min(max(newY, sceneSize.height * 0.1), sceneSize.height * 0.5) // Bounds
+//        print("Crown delta: \(delta)")
+//        let newY = position.y + CGFloat(delta) * 50
+//        position.y = min(max(newY, sceneSize.height * 0.1), sceneSize.height * 0.5)
     }
     
-    func applyJetForce(from blackHole: BlackHole, direction: CGVector) {
+    func applyGravitationalForce(from blackHole: BlackHole, direction: CGVector) {
         let distance = position.distance(to: blackHole.position)
-        if distance < blackHole.jetRange * blackHole.xScale {
-            let forceMagnitude = blackHole.jetStrength / max(distance, 1.0) * sailAngle
-            let force = CGVector(dx: direction.dx * forceMagnitude,
-                                 dy: direction.dy * forceMagnitude)
-            physicsBody?.applyForce(force)
-            print("Applied jet force: \(force) from black hole at: \(blackHole.position)")
-        }
+        let gravitationalConstant: CGFloat = 50000 // Increased for stronger pull
+        let gravForceMagnitude = gravitationalConstant / max(distance * distance, 1.0)
+        let gravForce = CGVector(dx: -direction.dx * gravForceMagnitude / distance,
+        dy: -direction.dy * gravForceMagnitude / distance)
+              
+        let forwardForceMagnitude = blackHole.jetStrength * sailAngle * blackHole.xScale // jetStrength = 200
+        let forwardForce = CGVector(dx: 0, dy: forwardForceMagnitude)
+              
+        physicsBody?.applyForce(gravForce)
+        physicsBody?.applyForce(forwardForce)
+        print("Applied gravitational force: \(gravForce), forward force: \(forwardForce) from black hole at: \(blackHole.position), distance: \(distance)")
     }
 }

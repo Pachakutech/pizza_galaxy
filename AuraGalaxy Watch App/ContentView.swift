@@ -8,6 +8,7 @@
 import SwiftUI
 import SpriteKit
 import WatchKit
+import Combine
 
 struct ContentView: View {
     @StateObject private var gameScene = GameScene(size: WKInterfaceDevice.current().screenBounds.size)
@@ -19,7 +20,7 @@ struct ContentView: View {
             SpriteView(scene: gameScene)
                 .ignoresSafeArea()
                 .onAppear {
-                    print("SpriteView appeared, scene size: \(gameScene.size)")
+                    print("ContentView appeared, scene size: \(gameScene.size)")
                 }
             if gameWon {
                 Text("You Win!")
@@ -28,26 +29,48 @@ struct ContentView: View {
                     .background(Color.black.opacity(0.7))
             }
         }
+        .focusable(true) // Ensure view can receive crown input
+        .digitalCrownRotation(
+            $crownValue,
+            from: -100.0,
+            through: 100.0,
+            sensitivity: .medium,
+            isContinuous: true
+        )
         .gesture(
             DragGesture(minimumDistance: 0)
                 .onEnded { value in
                     let location = value.location
-                    print("Tap at: \(location)")
+                    print("Tap gesture ended at: \(location)")
                     gameScene.handleTap(at: location)
                 }
         )
-        .digitalCrownRotation($crownValue)
+        .gesture(
+            DragGesture()
+                .onChanged { value in
+                    let deltaY = -value.translation.height / 1000.0
+                    crownValue += deltaY
+                    print("Drag gesture deltaY: \(deltaY), crownValue: \(crownValue)")
+                }
+        )
         .onChange(of: crownValue) { newValue, oldValue in
             let delta = newValue - oldValue
-            gameScene.spaceship.adjustVerticalPosition(delta: delta, sceneSize: gameScene.size)
+            print("Crown onChange triggered: newValue=\(newValue), oldValue=\(oldValue), delta=\(delta)")
+            gameScene.updateCrownDelta(delta)
         }
         .onChange(of: gameScene.spaceshipPosition) { newPosition, _ in
             for blackHole in gameScene.blackHoles {
-                if blackHole.zDepth < 10 && newPosition.distance(to: blackHole.position) < 30 {
-                    gameWon = true
-                    print("Win condition met")
-                }
+//                if blackHole.zDepth < 10 && newPosition.distance(to: blackHole.position) < 30 {
+//                    gameWon = true
+//                    print("Win condition met")
+//                }
             }
+        }
+        .onAppear {
+            print("ContentView onAppear: Initial crownValue=\(crownValue)")
+        }
+        .onDisappear {
+            print("ContentView disappeared")
         }
     }
 }
