@@ -27,6 +27,7 @@ class Spaceship: SKSpriteNode {
         physicsBody?.categoryBitMask = 1
         physicsBody?.collisionBitMask = 0
         physicsBody?.contactTestBitMask = 2
+        physicsBody?.isDynamic = false // Lock in place
         
         if let topEmitter = SKEmitterNode(fileNamed: "JetEffect") {
             topEmitter.particleBirthRate = 10
@@ -64,9 +65,8 @@ class Spaceship: SKSpriteNode {
     
     func applyThrust(crownDelta: Double) {
         let maxForcePerFrame: CGFloat = 50.0
-        let rawForce = -CGFloat(crownDelta) * thrustStrength
+        let rawForce = CGFloat(crownDelta) * thrustStrength
         let thrustForce = min(max(rawForce, -maxForcePerFrame), maxForcePerFrame)
-        physicsBody?.applyForce(CGVector(dx: 0, dy: thrustForce))
         
         topThruster?.isHidden = thrustForce <= 0
         bottomThruster?.isHidden = thrustForce >= 0
@@ -82,7 +82,7 @@ class Spaceship: SKSpriteNode {
         let gravitationalConstant: CGFloat = 50000
         let denominator = distance * distance < 1.0 ? 1.0 : distance * distance
         let gravForceMagnitude = gravitationalConstant / denominator
-        let gravForce = CGVector(dx: -direction.dx * gravForceMagnitude / distance, dy: -direction.dy * gravForceMagnitude / distance)
+        let gravForce = CGVector(dx: -direction.dx * gravForceMagnitude / distance, dy: 0) // No y-force
         
         physicsBody?.applyForce(gravForce)
         

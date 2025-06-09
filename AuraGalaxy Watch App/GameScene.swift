@@ -16,6 +16,7 @@ class GameScene: SKScene, ObservableObject {
     private var starfieldEmitter: SKEmitterNode!
     private var crownDelta: Double = 0.0
     private var lastCrownInputTime: TimeInterval = 0.0
+    private var verticalOffset: CGFloat = 0.0 // Track black hole y-offset
     
     override init(size: CGSize) {
         super.init(size: size)
@@ -32,7 +33,7 @@ class GameScene: SKScene, ObservableObject {
         physicsWorld.contactDelegate = self as SKPhysicsContactDelegate
         
         let cameraNode = SKCameraNode()
-        cameraNode.position = CGPoint(x: size.width / 2, y: size.height * 0.2)
+        cameraNode.position = CGPoint(x: size.width / 2, y: size.height / 2)
         camera = cameraNode
         addChild(cameraNode)
         
@@ -53,9 +54,10 @@ class GameScene: SKScene, ObservableObject {
         cameraNode.addChild(starfieldEmitter)
         
         spaceship = Spaceship()
-        spaceship.position = CGPoint(x: size.width / 2, y: size.height * 0.3)
+        spaceship.position = CGPoint(x: size.width / 2, y: size.height / 2)
         spaceshipPosition = spaceship.position
         spaceship.zPosition = 10
+        spaceship.physicsBody?.isDynamic = false // Lock in place
         addChild(spaceship)
         
         spawnBlackHoles()
@@ -65,11 +67,10 @@ class GameScene: SKScene, ObservableObject {
         blackHoles.removeAll()
         for _ in 0..<2 {
             let blackHole = BlackHole()
-            // Align with spaceship direction
             let angle = spaceship.zRotation
-            let offsetX = cos(angle) * size.width * 0.25 // Place within 1/4 screen width
+            let offsetX = cos(angle) * size.width * 0.25
             let initialX = spaceship.position.x + offsetX
-            let initialY = spaceship.position.y + size.height * 0.4 // Slightly further ahead
+            let initialY = spaceship.position.y + CGFloat.random(in: -size.height * 0.25...size.height * 0.25)
             blackHole.position = CGPoint(x: initialX, y: initialY)
             blackHole.initialX = initialX
             blackHole.zPosition = -1
@@ -91,12 +92,15 @@ class GameScene: SKScene, ObservableObject {
     
     override func update(_ currentTime: TimeInterval) {
         if let camera = camera {
-            camera.position = CGPoint(x: spaceship.position.x, y: spaceship.position.y + size.height * 0.4) // Adjusted to keep black holes in view
+            camera.position = CGPoint(x: spaceship.position.x, y: spaceship.position.y)
         }
         
+        // Apply crown input to vertical offset
         if crownDelta != 0 {
             lastCrownInputTime = currentTime
             spaceship.applyThrust(crownDelta: crownDelta)
+            verticalOffset -= CGFloat(crownDelta) * 50.0 // Adjust black hole positions
+            verticalOffset = min(max(verticalOffset, -size.height * 0.25), size.height * 0.25)
             
             let maxStarfieldOffset: CGFloat = 3.0
             let rawStarfieldOffset = -CGFloat(crownDelta) * 3
@@ -114,7 +118,6 @@ class GameScene: SKScene, ObservableObject {
         }
         
         for blackHole in blackHoles {
-            // Apply z-axis acceleration for black holes
             let distance = spaceship.position.distance(to: blackHole.position)
             if distance < blackHole.jetRange {
                 let jetAngle = blackHole.children
@@ -133,29 +136,18 @@ class GameScene: SKScene, ObservableObject {
                 let angle = spaceship.zRotation
                 let offsetX = cos(angle) * size.width * 0.25
                 blackHole.initialX = spaceship.position.x + offsetX
-                blackHole.position = CGPoint(x: blackHole.initialX, y: spaceship.position.y + size.height * 0.4)
+                blackHole.position = CGPoint(x: blackHole.initialX, y: spaceship.position.y + CGFloat.random(in: -size.height * 0.25...size.height * 0.25))
                 blackHole.setScale(0.05)
                 blackHole.direction = Bool.random() ? 1 : -1
                 blackHole.updateJetAngle()
             } else {
                 let scale = 0.05 + (1 - blackHole.zDepth / 100) * 0.95
                 blackHole.setScale(scale)
-                let targetY = blackHole.direction == 1 ? size.height * 0.8 : size.height * 0.2 // Adjusted for visibility
-                blackHole.position = CGPoint(x: blackHole.initialX, y: (spaceship.position.y + size.height * 0.4) + (targetY - size.height / 2) * (1 - blackHole.zDepth / 100))
+                let targetOffset = blackHole.direction == 1 ? size.height * 0.25 : -size.height * 0.25
+                let currentOffset = (targetOffset - verticalOffset) * (1 - blackHole.zDepth / 100) + verticalOffset
+                blackHole.position = CGPoint(x: blackHole.initialX, y: spaceship.position.y + currentOffset)
             }
             blackHole.applyGravitationalForce(to: spaceship)
-        }
-        
-        if let physicsBody = spaceship.physicsBody {
-            let minY = size.height * 0.1
-            let maxY = size.height * 0.7 // Increased to allow more movement
-            if spaceship.position.y < minY {
-                physicsBody.velocity.dy = max(physicsBody.velocity.dy, 0)
-                physicsBody.applyForce(CGVector(dx: 0, dy: 50.0))
-            } else if spaceship.position.y > maxY {
-                physicsBody.velocity.dy = min(physicsBody.velocity.dy, 0)
-                physicsBody.applyForce(CGVector(dx: 0, dy: -50.0))
-            }
         }
         
         spaceshipPosition = spaceship.position
