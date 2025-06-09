@@ -65,8 +65,11 @@ class GameScene: SKScene, ObservableObject {
         blackHoles.removeAll()
         for _ in 0..<2 {
             let blackHole = BlackHole()
-            let initialX = spaceship.position.x + CGFloat.random(in: -size.width / 2...size.width / 2)
-            let initialY = spaceship.position.y + size.height * 0.3
+            // Align with spaceship direction
+            let angle = spaceship.zRotation
+            let offsetX = cos(angle) * size.width * 0.25 // Place within 1/4 screen width
+            let initialX = spaceship.position.x + offsetX
+            let initialY = spaceship.position.y + size.height * 0.4 // Slightly further ahead
             blackHole.position = CGPoint(x: initialX, y: initialY)
             blackHole.initialX = initialX
             blackHole.zPosition = -1
@@ -88,7 +91,7 @@ class GameScene: SKScene, ObservableObject {
     
     override func update(_ currentTime: TimeInterval) {
         if let camera = camera {
-            camera.position = CGPoint(x: spaceship.position.x, y: spaceship.position.y + size.height * 0.3)
+            camera.position = CGPoint(x: spaceship.position.x, y: spaceship.position.y + size.height * 0.4) // Adjusted to keep black holes in view
         }
         
         if crownDelta != 0 {
@@ -111,26 +114,41 @@ class GameScene: SKScene, ObservableObject {
         }
         
         for blackHole in blackHoles {
+            // Apply z-axis acceleration for black holes
+            let distance = spaceship.position.distance(to: blackHole.position)
+            if distance < blackHole.jetRange {
+                let jetAngle = blackHole.children
+                    .first(where: { $0 is SKEmitterNode && $0.position.y > 0 })?
+                    .zRotation ?? 0
+                let verticalComponent = cos(jetAngle)
+                let zAcceleration = verticalComponent * blackHole.jetStrength / 500.0
+                blackHole.zSpeed = (100.0 / 180.0) + zAcceleration * 0.1
+            } else {
+                blackHole.zSpeed = 100.0 / 180.0
+            }
+            
             blackHole.zDepth -= blackHole.zSpeed
             if blackHole.zDepth <= 0 {
                 blackHole.zDepth = 100
-                blackHole.position = CGPoint(x: blackHole.initialX, y: spaceship.position.y + size.height * 0.3)
+                let angle = spaceship.zRotation
+                let offsetX = cos(angle) * size.width * 0.25
+                blackHole.initialX = spaceship.position.x + offsetX
+                blackHole.position = CGPoint(x: blackHole.initialX, y: spaceship.position.y + size.height * 0.4)
                 blackHole.setScale(0.05)
                 blackHole.direction = Bool.random() ? 1 : -1
-                blackHole.zSpeed = 100.0 / 180.0
-                blackHole.updateJetAngle() // Update jet angle during recycling
+                blackHole.updateJetAngle()
             } else {
                 let scale = 0.05 + (1 - blackHole.zDepth / 100) * 0.95
                 blackHole.setScale(scale)
-                let targetY = blackHole.direction == 1 ? size.height : 0
-                blackHole.position = CGPoint(x: blackHole.initialX, y: (spaceship.position.y + size.height * 0.3) + (targetY - size.height / 2) * (1 - blackHole.zDepth / 100))
+                let targetY = blackHole.direction == 1 ? size.height * 0.8 : size.height * 0.2 // Adjusted for visibility
+                blackHole.position = CGPoint(x: blackHole.initialX, y: (spaceship.position.y + size.height * 0.4) + (targetY - size.height / 2) * (1 - blackHole.zDepth / 100))
             }
             blackHole.applyGravitationalForce(to: spaceship)
         }
         
         if let physicsBody = spaceship.physicsBody {
             let minY = size.height * 0.1
-            let maxY = size.height * 0.5
+            let maxY = size.height * 0.7 // Increased to allow more movement
             if spaceship.position.y < minY {
                 physicsBody.velocity.dy = max(physicsBody.velocity.dy, 0)
                 physicsBody.applyForce(CGVector(dx: 0, dy: 50.0))

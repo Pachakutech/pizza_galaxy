@@ -87,17 +87,11 @@ class Spaceship: SKSpriteNode {
         physicsBody?.applyForce(gravForce)
         
         if distance < blackHole.jetRange {
-            let verticalComponent = cos(jetAngle)
             let horizontalComponent = sin(jetAngle)
             let jetForceMagnitude = blackHole.jetStrength * sailAngle * blackHole.xScale * blackHole.direction
             let jetForceX = jetForceMagnitude * horizontalComponent
             let jetForce = CGVector(dx: jetForceX, dy: 0)
             physicsBody?.applyForce(jetForce)
-            
-            let zAcceleration = verticalComponent * blackHole.jetStrength / 500.0
-            blackHole.zSpeed = (100.0 / 180.0) + zAcceleration * 0.1
-        } else {
-            blackHole.zSpeed = 100.0 / 180.0
         }
     }
 }

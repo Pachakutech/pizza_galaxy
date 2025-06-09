@@ -8,14 +8,14 @@
 import SpriteKit
 
 @MainActor
-class BlackHole: SKSpriteNode {
+class BlackHole: SKSpriteNode, ZDepthObject {
     let jetStrength: CGFloat = 500.0
     let jetRange: CGFloat = 100.0
     var zDepth: CGFloat = 100.0
     var zSpeed: CGFloat = 100.0 / 180.0
     var direction: CGFloat = 0
     var initialX: CGFloat = 0
-    private var jetAngle: CGFloat // Changed to var
+    private var jetAngle: CGFloat
     
     init() {
         jetAngle = CGFloat.random(in: -.pi / 4...(.pi / 4))
@@ -57,7 +57,6 @@ class BlackHole: SKSpriteNode {
     
     func updateJetAngle() {
         jetAngle = CGFloat.random(in: -.pi / 4...(.pi / 4))
-        // Update emitter rotations
         if let topEmitter = children.first(where: { $0 is SKEmitterNode && $0.position.y > 0 }) as? SKEmitterNode {
             topEmitter.zRotation = jetAngle
         }
