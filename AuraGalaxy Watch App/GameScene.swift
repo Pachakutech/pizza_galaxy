@@ -19,6 +19,7 @@ class GameScene: SKScene, ObservableObject {
     private var verticalOffset: CGFloat = 0.0
     private var isAnimatingOrbit: Bool = false
     private var animatingBlackHole: BlackHole?
+    private var backgroundNodes: [SKSpriteNode] = []
     
     override init(size: CGSize) {
         super.init(size: size)
@@ -39,19 +40,43 @@ class GameScene: SKScene, ObservableObject {
         camera = cameraNode
         addChild(cameraNode)
         
+        // Setup galaxy background (4x width, 1.6x height)
+        let backgroundTexture = SKTexture(imageNamed: "galaxy_background")
+        if backgroundTexture.size() == .zero {
+            print("Error: Galaxy background texture 'galaxy_background' is missing or invalid")
+        } else {
+            print("Background texture size: \(backgroundTexture.size()), expected: 896x295 points (1792x590 pixels @2x), scene size: \(size)")
+        }
+        let backgroundWidth = size.width * 4 // 896 points
+        let backgroundHeight = size.height * 1.6 // 295 points
+        // 2x2 grid for seamless wrapping
+        for i in 0..<2 {
+            for j in 0..<2 {
+                let background = SKSpriteNode(texture: backgroundTexture, size: CGSize(width: backgroundWidth, height: backgroundHeight))
+                background.position = CGPoint(
+                    x: CGFloat(i) * backgroundWidth - backgroundWidth / 2,
+                    y: CGFloat(j) * backgroundHeight - backgroundHeight / 2 + size.height / 2
+                )
+                background.zPosition = -3
+                addChild(background)
+                backgroundNodes.append(background)
+                print("Background \(i),\(j) initialized at x: \(background.position.x), y: \(background.position.y), size: \(background.size)")
+            }
+        }
+        
         starfieldEmitter = SKEmitterNode()
         starfieldEmitter.particleTexture = SKTexture(imageNamed: "star")
         if starfieldEmitter.particleTexture == nil {
             print("Error: Starfield spark texture is nil")
         }
-        starfieldEmitter.particleBirthRate = 30 // Increased for density
-        starfieldEmitter.particleLifetime = 3 // Reduced for denser clustering
-        starfieldEmitter.particleSpeed = 50 // Slower for density
-        starfieldEmitter.particleScale = 0.1 // Bigger stars
-        starfieldEmitter.particleAlpha = 1.0 // Max brightness
+        starfieldEmitter.particleBirthRate = 30
+        starfieldEmitter.particleLifetime = 3
+        starfieldEmitter.particleSpeed = 50
+        starfieldEmitter.particleScale = 0.1
+        starfieldEmitter.particleAlpha = 1.0
         starfieldEmitter.emissionAngle = 0
-        starfieldEmitter.emissionAngleRange = 2 * .pi // Radial motion
-        starfieldEmitter.particlePositionRange = CGVector(dx: 0, dy: 0) // Single point origin
+        starfieldEmitter.emissionAngleRange = 2 * .pi
+        starfieldEmitter.particlePositionRange = CGVector(dx: 0, dy: 0)
         starfieldEmitter.position = CGPoint(x: 0, y: 0)
         starfieldEmitter.zPosition = -2
         cameraNode.addChild(starfieldEmitter)
@@ -63,6 +88,10 @@ class GameScene: SKScene, ObservableObject {
         addChild(spaceship)
         
         spawnBlackHoles()
+        
+        // Reset velocity to prevent initial drift
+        spaceship.physicsBody?.velocity = CGVector.zero
+        print("Initial setup: spaceship position: \(spaceship.position), velocity: \(spaceship.physicsBody?.velocity ?? CGVector.zero), camera: \(cameraNode.position)")
     }
     
     private func spawnBlackHoles() {
@@ -114,7 +143,7 @@ class GameScene: SKScene, ObservableObject {
             verticalOffset -= CGFloat(crownDelta) * 15.0
             verticalOffset = min(max(verticalOffset, -size.height * 0.4), size.height * 0.4)
             
-            starfieldEmitter.position.y = verticalOffset // Match black hole y-range
+            starfieldEmitter.position.y = verticalOffset
             
             crownDelta = 0
         } else if currentTime - lastCrownInputTime > 0.25 {
@@ -123,6 +152,37 @@ class GameScene: SKScene, ObservableObject {
         
         if isAnimatingOrbit {
             return
+        }
+        
+        // Update background to wrap camera
+        let backgroundWidth = size.width * 4
+        let backgroundHeight = size.height * 1.6
+        let cameraX = spaceship.position.x
+        let cameraY = spaceship.position.y + verticalOffset
+        if let physicsBody = spaceship.physicsBody {
+            let velocityX = physicsBody.velocity.dx
+            let scrollSpeed: CGFloat = 0.1
+            let scrollOffsetX = velocityX * scrollSpeed * (1.0 / 60.0)
+            for background in backgroundNodes {
+                let offsetX = cameraX.truncatingRemainder(dividingBy: backgroundWidth)
+                let offsetY = cameraY.truncatingRemainder(dividingBy: backgroundHeight)
+                var newX = background.position.x - scrollOffsetX
+                var newY = verticalOffset + size.height / 2
+                if newX < cameraX - backgroundWidth {
+                    newX += backgroundWidth
+                } else if newX > cameraX + backgroundWidth {
+                    newX -= backgroundWidth
+                }
+                if newY < cameraY - backgroundHeight {
+                    newY += backgroundHeight
+                } else if newY > cameraY + backgroundHeight {
+                    newY -= backgroundHeight
+                }
+                background.position = CGPoint(x: newX, y: newY)
+            }
+            print("Update: camera: \(CGPoint(x: cameraX, y: cameraY)), velocityX: \(velocityX), scrollOffsetX: \(scrollOffsetX), verticalOffset: \(verticalOffset), background[0]: \(backgroundNodes.first?.position ?? .zero)")
+        } else {
+            print("Warning: spaceship.physicsBody is nil")
         }
         
         for blackHole in blackHoles {
