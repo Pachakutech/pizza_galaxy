@@ -2,17 +2,15 @@
 //  BlackHole.swift
 //  AuraGalaxy
 //
-//  Created by Pachakutech on 5/27/25.
+//  Created by Pachakutech on 5/27/25
 //
 
 import SpriteKit
 
 @MainActor
 class BlackHole: SKSpriteNode, ZDepthObject {
-    let jetStrength: CGFloat = 500.0
-    let jetRange: CGFloat = 100.0
     var zDepth: CGFloat = 100.0
-    var zSpeed: CGFloat = 100.0 / 180.0
+    var zSpeed: CGFloat = 100.0 / 360.0 // Slower, ~6 seconds
     var direction: CGFloat = 0
     var initialX: CGFloat = 0
     private var jetAngle: CGFloat

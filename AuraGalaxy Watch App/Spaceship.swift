@@ -2,14 +2,13 @@
 //  Spaceship.swift
 //  AuraGalaxy
 //
-//  Created by Pachakutech on 5/27/25.
+//  Created by Pachakutech on 5/27/25
 //
 
 import SpriteKit
 
 @MainActor
 class Spaceship: SKSpriteNode {
-    private var sailAngle: CGFloat = 0.5
     private var topThruster: SKEmitterNode?
     private var bottomThruster: SKEmitterNode?
     private let thrustStrength: CGFloat = 150.0
@@ -23,16 +22,17 @@ class Spaceship: SKSpriteNode {
         physicsBody = SKPhysicsBody(rectangleOf: size)
         physicsBody?.mass = 1.0
         physicsBody?.friction = 0.0
-        physicsBody?.linearDamping = 0.8
+        physicsBody?.linearDamping = 0.2
         physicsBody?.categoryBitMask = 1
         physicsBody?.collisionBitMask = 0
         physicsBody?.contactTestBitMask = 2
-        physicsBody?.isDynamic = false // Lock in place
+        physicsBody?.isDynamic = true
+        zRotation = 3 * .pi / 2 // Downward (270°)
         
         if let topEmitter = SKEmitterNode(fileNamed: "JetEffect") {
             topEmitter.particleBirthRate = 10
             topEmitter.position = CGPoint(x: 0, y: size.height / 2)
-            topEmitter.zRotation = 0
+            topEmitter.zRotation = .pi / 2 // Upward
             topEmitter.zPosition = 1
             topEmitter.isHidden = true
             addChild(topEmitter)
@@ -44,7 +44,7 @@ class Spaceship: SKSpriteNode {
         if let bottomEmitter = SKEmitterNode(fileNamed: "JetEffect") {
             bottomEmitter.particleBirthRate = 10
             bottomEmitter.position = CGPoint(x: 0, y: -size.height / 2)
-            bottomEmitter.zRotation = .pi
+            bottomEmitter.zRotation = 3 * .pi / 2 // Downward
             bottomEmitter.zPosition = 1
             bottomEmitter.isHidden = true
             addChild(bottomEmitter)
@@ -56,11 +56,6 @@ class Spaceship: SKSpriteNode {
     
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-    
-    func adjustSailRudder(touchLocation: CGPoint, sceneSize: CGSize) {
-        sailAngle = touchLocation.y / sceneSize.height
-        zRotation = .pi / 2 + sailAngle * .pi
     }
     
     func applyThrust(crownDelta: Double) {
@@ -79,19 +74,11 @@ class Spaceship: SKSpriteNode {
     
     func applyGravitationalForce(from blackHole: BlackHole, direction: CGVector, jetAngle: CGFloat) {
         let distance = position.distance(to: blackHole.position)
-        let gravitationalConstant: CGFloat = 50000
-        let denominator = distance * distance < 1.0 ? 1.0 : distance * distance
+        let gravitationalConstant: CGFloat = 25000
+        let denominator = max(distance * distance, 1.0)
         let gravForceMagnitude = gravitationalConstant / denominator
-        let gravForce = CGVector(dx: -direction.dx * gravForceMagnitude / distance, dy: 0) // No y-force
+        let gravForce = CGVector(dx: direction.dx * gravForceMagnitude / distance, dy: 0)
         
         physicsBody?.applyForce(gravForce)
-        
-        if distance < blackHole.jetRange {
-            let horizontalComponent = sin(jetAngle)
-            let jetForceMagnitude = blackHole.jetStrength * sailAngle * blackHole.xScale * blackHole.direction
-            let jetForceX = jetForceMagnitude * horizontalComponent
-            let jetForce = CGVector(dx: jetForceX, dy: 0)
-            physicsBody?.applyForce(jetForce)
-        }
     }
 }
