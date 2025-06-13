@@ -39,19 +39,19 @@ class GameScene: SKScene, ObservableObject {
         camera = cameraNode
         addChild(cameraNode)
         
-        // Setup galaxy background (4x width, 1.8x height)
+        // Setup galaxy background (1024-point width, 1.8x height)
         let backgroundTexture = SKTexture(imageNamed: "galaxy_background")
         if backgroundTexture.size() == .zero {
             print("Error: Galaxy background texture 'galaxy_background' is missing or invalid")
         } else {
-            print("Background texture size: \(backgroundTexture.size()), expected: 896x331 points, scene size: \(size)")
+            print("Background texture size: \(backgroundTexture.size()), expected: 1024x331 points, scene size: \(size)")
         }
-        let backgroundWidth = size.width * 4 // 896 points
+        let backgroundWidth: CGFloat = 1024 // Matches texture width in points
         let backgroundHeight = size.height * 1.8 // 331.2 points
         for i in 0..<2 {
             let background = SKSpriteNode(texture: backgroundTexture, size: CGSize(width: backgroundWidth, height: backgroundHeight))
             background.position = CGPoint(
-                x: CGFloat(i) * backgroundWidth - backgroundWidth / 2,
+                x: CGFloat(i) * backgroundWidth - backgroundWidth / 2, // 0: -512, 1: 512
                 y: size.height / 2 // Center when verticalOffset = 0
             )
             background.zPosition = -3
@@ -154,10 +154,9 @@ class GameScene: SKScene, ObservableObject {
         }
         
         // Update background: horizontal wrapping, vertical alignment based on verticalOffset
-        let backgroundWidth = size.width * 4
+        let backgroundWidth: CGFloat = 1024 // Matches texture width
         let backgroundHeight = size.height * 1.8
         let cameraX = spaceship.position.x
-        // Background moves opposite to black holes
         let backgroundY = size.height / 2 - verticalOffset
         if let physicsBody = spaceship.physicsBody {
             let velocityX = physicsBody.velocity.dx
@@ -165,14 +164,15 @@ class GameScene: SKScene, ObservableObject {
             let scrollOffsetX = velocityX * scrollSpeed * (1.0 / 60.0)
             for background in backgroundNodes {
                 var newX = background.position.x - scrollOffsetX
-                if newX < cameraX - backgroundWidth {
-                    newX += backgroundWidth
-                } else if newX > cameraX + backgroundWidth {
-                    newX -= backgroundWidth
+                // Wrap-around: reposition when fully off-screen
+                if newX < cameraX - backgroundWidth / 2 - size.width / 2 {
+                    newX += backgroundWidth * 2 // Jump to right
+                } else if newX > cameraX + backgroundWidth / 2 + size.width / 2 {
+                    newX -= backgroundWidth * 2 // Jump to left
                 }
                 background.position = CGPoint(x: newX, y: backgroundY)
             }
-            print("Update: camera: \(CGPoint(x: cameraX, y: spaceship.position.y)), velocityX: \(velocityX), scrollOffsetX: \(scrollOffsetX), verticalOffset: \(verticalOffset), backgroundY: \(backgroundY), spaceship.y: \(spaceship.position.y)")
+            print("Update: camera: \(CGPoint(x: cameraX, y: spaceship.position.y)), velocityX: \(velocityX), scrollOffsetX: \(scrollOffsetX), verticalOffset: \(verticalOffset), backgroundY: \(backgroundY), spaceship.y: \(spaceship.position.y), background0.x: \(backgroundNodes.first?.position.x ?? 0), background1.x: \(backgroundNodes.last?.position.x ?? 0)")
         } else {
             print("Warning: spaceship.physicsBody is nil")
         }
