@@ -132,6 +132,10 @@ class GameScene: SKScene, ObservableObject {
         spaceship.position.y = size.height / 2
         if let physicsBody = spaceship.physicsBody {
             physicsBody.velocity.dy = 0 // Reset y-velocity
+            
+            // Apply x-axis speed limit
+            let maxSpeed: CGFloat = 200.0 // Points per second
+            physicsBody.velocity.dx = max(min(physicsBody.velocity.dx, maxSpeed), -maxSpeed)
         }
         
         if let camera = camera {
@@ -150,6 +154,20 @@ class GameScene: SKScene, ObservableObject {
         }
         
         if isAnimatingOrbit {
+            // Skip updates for animating black holes, except for collided one
+            if let collidedBlackHole = animatingBlackHole {
+                for blackHole in blackHoles {
+                    if blackHole !== collidedBlackHole {
+                        continue // Skip orbiting black holes
+                    }
+                    // Update collided black hole's zDepth only
+                    blackHole.zDepth -= blackHole.zSpeed
+                    if blackHole.zDepth <= 0 {
+                        print("Collided black hole at zDepth <= 0, position: \(blackHole.position), spaceship: \(spaceship.position)")
+                        resetBlackHole(blackHole)
+                    }
+                }
+            }
             return
         }
         
@@ -164,7 +182,6 @@ class GameScene: SKScene, ObservableObject {
             let scrollOffsetX = velocityX * scrollSpeed * (1.0 / 60.0)
             for background in backgroundNodes {
                 var newX = background.position.x - scrollOffsetX
-                // Wrap-around: reposition when fully off-screen
                 if newX < cameraX - backgroundWidth / 2 - size.width / 2 {
                     newX += backgroundWidth * 2 // Jump to right
                 } else if newX > cameraX + backgroundWidth / 2 + size.width / 2 {
@@ -195,17 +212,15 @@ class GameScene: SKScene, ObservableObject {
                 // Check for collision
                 let distance = spaceship.position.distance(to: blackHole.position)
                 let collisionThreshold = (spaceship.size.width / 2 + blackHole.size.width / 2)
-                if distance < collisionThreshold {
-                    if blackHole.zDepth <= 30 {
-                        print("Collision at zDepth: \(blackHole.zDepth), position: \(blackHole.position), spaceship: \(spaceship.position)")
-                        startOrbitAnimation(for: blackHole)
-                    } else {
-                        print("Collision detected (GameOver) at zDepth: \(blackHole.zDepth), position: \(blackHole.position)")
-                        NotificationCenter.default.post(name: NSNotification.Name("GameOver"), object: nil)
-                    }
+                if distance < collisionThreshold && blackHole.zDepth < 10 {
+                    print("Collision at zDepth: \(blackHole.zDepth), position: \(blackHole.position), spaceship: \(spaceship.position)")
+                    startOrbitAnimation(for: blackHole)
                 }
             }
-            blackHole.applyGravitationalForce(to: spaceship)
+            // Skip gravitational forces during animation
+            if !isAnimatingOrbit {
+                blackHole.applyGravitationalForce(to: spaceship)
+            }
         }
         
         spaceshipPosition = spaceship.position
@@ -243,7 +258,16 @@ class GameScene: SKScene, ObservableObject {
         let orbitPath = UIBezierPath(arcCenter: spaceship.position, radius: radius, startAngle: 0, endAngle: .pi * 2, clockwise: true)
         let orbitAction = SKAction.follow(orbitPath.cgPath, asOffset: false, orientToPath: false, duration: 3.0)
         let repeatOrbit = SKAction.repeat(orbitAction, count: 2)
-        blackHole.run(repeatOrbit)
+        
+        // Apply orbit animation to non-collided black holes
+        for bh in blackHoles {
+            if bh !== blackHole {
+                bh.run(repeatOrbit)
+                print("Started orbit animation for non-collided black hole at position: \(bh.position), zDepth: \(bh.zDepth)")
+            } else {
+                print("Collided black hole remains centered at position: \(bh.position), zDepth: \(bh.zDepth)")
+            }
+        }
         
         let spinAction = SKAction.rotate(byAngle: .pi * 4, duration: 3.0)
         starfieldEmitter.run(spinAction)
@@ -254,7 +278,12 @@ class GameScene: SKScene, ObservableObject {
             self.isAnimatingOrbit = false
             self.starfieldEmitter.zRotation = self.spaceship.zRotation - .pi / 2
             self.applyEndForce(to: blackHole)
-            self.resetBlackHole(blackHole)
+            // Reset non-collided black holes
+            for bh in self.blackHoles {
+                if bh !== blackHole {
+                    self.resetBlackHole(bh)
+                }
+            }
             self.animatingBlackHole = nil
         }
         run(SKAction.sequence([wait, endAnimation]))
