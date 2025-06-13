@@ -33,35 +33,31 @@ class GameScene: SKScene, ObservableObject {
     
     private func setupScene() {
         physicsWorld.gravity = CGVector(dx: 0, dy: 0)
-        physicsWorld.contactDelegate = self
         
         let cameraNode = SKCameraNode()
         cameraNode.position = CGPoint(x: size.width / 2, y: size.height / 2)
         camera = cameraNode
         addChild(cameraNode)
         
-        // Setup galaxy background (4x width, 1.6x height)
+        // Setup galaxy background (4x width, 1.8x height)
         let backgroundTexture = SKTexture(imageNamed: "galaxy_background")
         if backgroundTexture.size() == .zero {
             print("Error: Galaxy background texture 'galaxy_background' is missing or invalid")
         } else {
-            print("Background texture size: \(backgroundTexture.size()), expected: 896x295 points (1792x590 pixels @2x), scene size: \(size)")
+            print("Background texture size: \(backgroundTexture.size()), expected: 896x331 points, scene size: \(size)")
         }
         let backgroundWidth = size.width * 4 // 896 points
-        let backgroundHeight = size.height * 1.6 // 295 points
-        // 2x2 grid for seamless wrapping
+        let backgroundHeight = size.height * 1.8 // 331.2 points
         for i in 0..<2 {
-            for j in 0..<2 {
-                let background = SKSpriteNode(texture: backgroundTexture, size: CGSize(width: backgroundWidth, height: backgroundHeight))
-                background.position = CGPoint(
-                    x: CGFloat(i) * backgroundWidth - backgroundWidth / 2,
-                    y: CGFloat(j) * backgroundHeight - backgroundHeight / 2 + size.height / 2
-                )
-                background.zPosition = -3
-                addChild(background)
-                backgroundNodes.append(background)
-                print("Background \(i),\(j) initialized at x: \(background.position.x), y: \(background.position.y), size: \(background.size)")
-            }
+            let background = SKSpriteNode(texture: backgroundTexture, size: CGSize(width: backgroundWidth, height: backgroundHeight))
+            background.position = CGPoint(
+                x: CGFloat(i) * backgroundWidth - backgroundWidth / 2,
+                y: size.height / 2 // Center when verticalOffset = 0
+            )
+            background.zPosition = -3
+            addChild(background)
+            backgroundNodes.append(background)
+            print("Background \(i) initialized at x: \(background.position.x), y: \(background.position.y), size: \(background.size)")
         }
         
         starfieldEmitter = SKEmitterNode()
@@ -76,8 +72,8 @@ class GameScene: SKScene, ObservableObject {
         starfieldEmitter.particleAlpha = 1.0
         starfieldEmitter.emissionAngle = 0
         starfieldEmitter.emissionAngleRange = 2 * .pi
-        starfieldEmitter.particlePositionRange = CGVector(dx: 0, dy: 0)
-        starfieldEmitter.position = CGPoint(x: 0, y: 0)
+        starfieldEmitter.particlePositionRange = CGVector(dx: size.width, dy: size.height)
+        starfieldEmitter.position = CGPoint(x: 0, y: 0) // Center on camera
         starfieldEmitter.zPosition = -2
         cameraNode.addChild(starfieldEmitter)
         
@@ -89,7 +85,6 @@ class GameScene: SKScene, ObservableObject {
         
         spawnBlackHoles()
         
-        // Reset velocity to prevent initial drift
         spaceship.physicsBody?.velocity = CGVector.zero
         print("Initial setup: spaceship position: \(spaceship.position), velocity: \(spaceship.physicsBody?.velocity ?? CGVector.zero), camera: \(cameraNode.position)")
     }
@@ -133,6 +128,12 @@ class GameScene: SKScene, ObservableObject {
     }
     
     override func update(_ currentTime: TimeInterval) {
+        // Lock spaceship y-position to prevent drift
+        spaceship.position.y = size.height / 2
+        if let physicsBody = spaceship.physicsBody {
+            physicsBody.velocity.dy = 0 // Reset y-velocity
+        }
+        
         if let camera = camera {
             camera.position = spaceship.position
         }
@@ -143,8 +144,6 @@ class GameScene: SKScene, ObservableObject {
             verticalOffset -= CGFloat(crownDelta) * 15.0
             verticalOffset = min(max(verticalOffset, -size.height * 0.4), size.height * 0.4)
             
-            starfieldEmitter.position.y = verticalOffset
-            
             crownDelta = 0
         } else if currentTime - lastCrownInputTime > 0.25 {
             spaceship.hideThrusters()
@@ -154,37 +153,35 @@ class GameScene: SKScene, ObservableObject {
             return
         }
         
-        // Update background to wrap camera
+        // Update background: horizontal wrapping, vertical alignment based on verticalOffset
         let backgroundWidth = size.width * 4
-        let backgroundHeight = size.height * 1.6
+        let backgroundHeight = size.height * 1.8
         let cameraX = spaceship.position.x
-        let cameraY = spaceship.position.y + verticalOffset
+        // Background moves opposite to black holes
+        let backgroundY = size.height / 2 - verticalOffset
         if let physicsBody = spaceship.physicsBody {
             let velocityX = physicsBody.velocity.dx
             let scrollSpeed: CGFloat = 0.1
             let scrollOffsetX = velocityX * scrollSpeed * (1.0 / 60.0)
             for background in backgroundNodes {
-                let offsetX = cameraX.truncatingRemainder(dividingBy: backgroundWidth)
-                let offsetY = cameraY.truncatingRemainder(dividingBy: backgroundHeight)
                 var newX = background.position.x - scrollOffsetX
-                var newY = verticalOffset + size.height / 2
                 if newX < cameraX - backgroundWidth {
                     newX += backgroundWidth
                 } else if newX > cameraX + backgroundWidth {
                     newX -= backgroundWidth
                 }
-                if newY < cameraY - backgroundHeight {
-                    newY += backgroundHeight
-                } else if newY > cameraY + backgroundHeight {
-                    newY -= backgroundHeight
-                }
-                background.position = CGPoint(x: newX, y: newY)
+                background.position = CGPoint(x: newX, y: backgroundY)
             }
-            print("Update: camera: \(CGPoint(x: cameraX, y: cameraY)), velocityX: \(velocityX), scrollOffsetX: \(scrollOffsetX), verticalOffset: \(verticalOffset), background[0]: \(backgroundNodes.first?.position ?? .zero)")
+            print("Update: camera: \(CGPoint(x: cameraX, y: spaceship.position.y)), velocityX: \(velocityX), scrollOffsetX: \(scrollOffsetX), verticalOffset: \(verticalOffset), backgroundY: \(backgroundY), spaceship.y: \(spaceship.position.y)")
         } else {
             print("Warning: spaceship.physicsBody is nil")
         }
         
+        // Update starfield: move y slower than black holes
+        let starfieldY = verticalOffset * 0.5 // 0.5x speed, relative to camera
+        starfieldEmitter.position = CGPoint(x: 0, y: starfieldY)
+        
+        // Manual collision detection
         for blackHole in blackHoles {
             blackHole.zDepth -= blackHole.zSpeed
             if blackHole.zDepth <= 0 {
@@ -194,6 +191,19 @@ class GameScene: SKScene, ObservableObject {
                 let scale = 0.05 + (1 - blackHole.zDepth / 100) * 0.95
                 blackHole.setScale(scale)
                 blackHole.position = CGPoint(x: blackHole.initialX, y: spaceship.position.y + verticalOffset)
+                
+                // Check for collision
+                let distance = spaceship.position.distance(to: blackHole.position)
+                let collisionThreshold = (spaceship.size.width / 2 + blackHole.size.width / 2)
+                if distance < collisionThreshold {
+                    if blackHole.zDepth <= 30 {
+                        print("Collision at zDepth: \(blackHole.zDepth), position: \(blackHole.position), spaceship: \(spaceship.position)")
+                        startOrbitAnimation(for: blackHole)
+                    } else {
+                        print("Collision detected (GameOver) at zDepth: \(blackHole.zDepth), position: \(blackHole.position)")
+                        NotificationCenter.default.post(name: NSNotification.Name("GameOver"), object: nil)
+                    }
+                }
             }
             blackHole.applyGravitationalForce(to: spaceship)
         }
@@ -258,25 +268,11 @@ class GameScene: SKScene, ObservableObject {
         let forceAngle = isAbove ? jetAngle + .pi : jetAngle
         let forceMagnitude: CGFloat = 2000.0
         let forceX = cos(forceAngle) * forceMagnitude
-        let forceY = sin(forceAngle) * forceMagnitude
-        spaceship.physicsBody!.applyForce(CGVector(dx: forceX, dy: forceY))
-        print("Applied end force: angle \(forceAngle * 180 / .pi)°, isAbove: \(isAbove), force: (\(forceX), \(forceY))")
-    }
-}
-
-extension GameScene: SKPhysicsContactDelegate {
-    nonisolated func didBegin(_ contact: SKPhysicsContact) {
-        Task { @MainActor in
-            guard let nodeA = contact.bodyA.node, let nodeB = contact.bodyB.node else { return }
-            let (spaceship, blackHole) = (nodeA is Spaceship) ? (nodeA as! Spaceship, nodeB as! BlackHole) : (nodeB as! Spaceship, nodeA as! BlackHole)
-            
-            if blackHole.zDepth <= 30 {
-                print("Collision at zDepth: \(blackHole.zDepth), position: \(blackHole.position), spaceship: \(spaceship.position)")
-                self.startOrbitAnimation(for: blackHole)
-            } else {
-                print("Collision detected (GameOver) at zDepth: \(blackHole.zDepth), position: \(contact.contactPoint)")
-                NotificationCenter.default.post(name: NSNotification.Name("GameOver"), object: nil)
-            }
+        if let physicsBody = spaceship.physicsBody {
+            physicsBody.applyForce(CGVector(dx: forceX, dy: 0.0))
+            print("Applied end force: angle \(forceAngle * 180 / .pi)°, isAbove: \(isAbove), force: (\(forceX), 0.0)")
+        } else {
+            print("Warning: spaceship.physicsBody is nil in applyEndForce")
         }
     }
 }
