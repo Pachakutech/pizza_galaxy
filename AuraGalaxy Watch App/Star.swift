@@ -10,7 +10,7 @@ import SpriteKit
 @MainActor
 class Star: CelestialBody {
     init() {
-        super.init(textureName: "star", size: CGSize(width: 15, height: 15))
+        super.init(textureName: "star", size: CGSize(width: 15, height: 15), mass: 0.1)
         // Temporary debug border
         color = .red
         colorBlendFactor = 0.1 // Remove after testing
@@ -21,7 +21,7 @@ class Star: CelestialBody {
     }
 
     override func reset(spaceshipX: CGFloat, spaceshipY: CGFloat, verticalOffset: CGFloat) {
-        super.reset(spaceshipX: spaceshipX, spaceshipY: spaceshipY, verticalOffset: verticalOffset)
+        super.reset(spaceshipX: spaceshipY, spaceshipY: spaceshipY, verticalOffset: verticalOffset)
         // Reapply debug border
         color = .red
         colorBlendFactor = 0.1 // Remove after testing

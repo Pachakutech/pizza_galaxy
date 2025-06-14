@@ -1,4 +1,4 @@
-//
+
 //  GameScene.swift
 //  AuraGalaxy
 //
@@ -26,7 +26,7 @@ class GameScene: SKScene, ObservableObject {
     private let maxCelestialBodies = 14
     private let blackHoleProbability = 0.2
     private let placidPeriodFrames = 60
-    private let spawnIntervalFrames = 15 // Changed from 2 to 15
+    private let spawnIntervalFrames = 15
 
     override init(size: CGSize) {
         super.init(size: size)
@@ -66,7 +66,6 @@ class GameScene: SKScene, ObservableObject {
         spaceship.zPosition = 10
         addChild(spaceship)
 
-        // Pre-allocate celestial bodies
         for _ in 0..<maxCelestialBodies {
             let isBlackHole = CGFloat.random(in: 0...1) < blackHoleProbability
             let body: CelestialBody = isBlackHole ? BlackHole() : Star()
@@ -155,8 +154,8 @@ class GameScene: SKScene, ObservableObject {
             } else {
                 activeStars.append(newBody as! Star)
             }
-            addChild(newBody) // Add to scene if not already
-            print("Spawned \(isBlackHole ? "BlackHole" : "Star") at x: \(newBody.initialX), y: \(newBody.position.y), scale: \(newBody.xScale)")
+            addChild(newBody) // Ensure added to scene
+            print("Spawned \(isBlackHole ? "BlackHole" : "Star") at angle: \(newBody.initialAngle * 180 / .pi)°, distance: \(newBody.initialDistance)")
         }
 
         if isAnimatingOrbit {
@@ -179,7 +178,7 @@ class GameScene: SKScene, ObservableObject {
             if body.zDepth <= 0 {
                 bodiesToReset.append(body)
             } else {
-                body.updatePositionAndScale(spaceshipY: spaceship.position.y, verticalOffset: verticalOffset)
+                body.updatePositionAndScale(spaceshipX: spaceship.position.x, spaceshipY: spaceship.position.y, verticalOffset: verticalOffset)
 
                 let distance = spaceship.position.distance(to: body.position)
                 let collisionThreshold = (spaceship.size.width / 2 + body.size.width / 2)

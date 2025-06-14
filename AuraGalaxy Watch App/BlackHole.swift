@@ -13,7 +13,7 @@ class BlackHole: CelestialBody {
     private var jetEmitters: [SKEmitterNode] = []
 
     init() {
-        super.init(textureName: "blackhole_placeholder", size: CGSize(width: 20, height: 20))
+        super.init(textureName: "blackhole_placeholder", size: CGSize(width: 20, height: 20), mass: 1.0)
         setupJetEffects()
     }
 

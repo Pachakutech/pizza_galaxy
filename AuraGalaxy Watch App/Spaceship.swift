@@ -16,7 +16,7 @@ class Spaceship: SKSpriteNode {
     init() {
         let texture = SKTexture(imageNamed: "spaceship_placeholder")
         guard texture.size() != .zero else {
-            fatalError("Error: Spaceship texture 'spaceship_placeholder' is(missing or invalid")
+            fatalError("Error: Spaceship texture 'spaceship_placeholder' is missing or invalid")
         }
         super.init(texture: texture, color: .clear, size: CGSize(width: 30, height: 30))
         physicsBody = SKPhysicsBody(rectangleOf: size)
@@ -32,7 +32,7 @@ class Spaceship: SKSpriteNode {
         if let topEmitter = SKEmitterNode(fileNamed: "JetEffect") {
             topEmitter.particleBirthRate = 10
             topEmitter.position = CGPoint(x: 0, y: size.height / 2)
-            topEmitter.zRotation = .pi / 2
+            topEmitter.zRotation = 3 * .pi / 2 // Inverted, was .pi / 2 (fires downward)
             topEmitter.zPosition = 1
             topEmitter.isHidden = true
             addChild(topEmitter)
@@ -44,7 +44,7 @@ class Spaceship: SKSpriteNode {
         if let bottomEmitter = SKEmitterNode(fileNamed: "JetEffect") {
             bottomEmitter.particleBirthRate = 10
             bottomEmitter.position = CGPoint(x: 0, y: -size.height / 2)
-            bottomEmitter.zRotation = 3 * .pi / 2
+            bottomEmitter.zRotation = .pi / 2 // Inverted, was 3 * .pi / 2 (fires upward)
             bottomEmitter.zPosition = 1
             bottomEmitter.isHidden = true
             addChild(bottomEmitter)
