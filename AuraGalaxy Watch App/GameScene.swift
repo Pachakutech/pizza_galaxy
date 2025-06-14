@@ -19,6 +19,7 @@ class GameScene: SKScene, ObservableObject {
     private var crownDelta: Double = 0.0
     private var lastCrownInputTime: TimeInterval = 0.0
     private var verticalOffset: CGFloat = 0.0
+    private var backgroundOffset: CGFloat = 0.0 // New state for background
     private var isAnimatingOrbit: Bool = false
     private var animatingBlackHole: BlackHole?
     private var frameCount: Int = 0
@@ -116,7 +117,13 @@ class GameScene: SKScene, ObservableObject {
         let backgroundWidth: CGFloat = 1024
         let backgroundHeight = size.height * 1.8
         let cameraX = spaceship.position.x
-        let backgroundY = size.height / 2 - verticalOffset
+        // Update backgroundOffset based on verticalOffset
+        let maxOffset = size.height * 0.4
+        let baseSpeed: CGFloat = maxOffset / (60 * 10) // ~20 seconds at 60 FPS
+        let speedFactor = baseSpeed * (verticalOffset / maxOffset) // Linear scaling
+        backgroundOffset += speedFactor
+        backgroundOffset = min(max(backgroundOffset, -maxOffset), maxOffset)
+        let backgroundY = size.height / 2 - backgroundOffset // Same direction as celestial bodies
         if let physicsBody = spaceship.physicsBody {
             let velocityX = physicsBody.velocity.dx
             let scrollSpeed: CGFloat = 0.1
@@ -131,6 +138,7 @@ class GameScene: SKScene, ObservableObject {
                 background.position = CGPoint(x: newX, y: backgroundY)
             }
         }
+        print("Background y=\(backgroundY), verticalOffset=\(verticalOffset), backgroundOffset=\(backgroundOffset), speedFactor=\(speedFactor)")
 
         // Placid period
         if placidFrameCount > 0 {
