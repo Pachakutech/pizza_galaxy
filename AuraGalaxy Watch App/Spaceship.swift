@@ -12,11 +12,11 @@ class Spaceship: SKSpriteNode {
     private var topThruster: SKEmitterNode?
     private var bottomThruster: SKEmitterNode?
     private let thrustStrength: CGFloat = 150.0
-    
+
     init() {
         let texture = SKTexture(imageNamed: "spaceship_placeholder")
         guard texture.size() != .zero else {
-            fatalError("Error: Spaceship texture 'spaceship_placeholder' is missing or invalid")
+            fatalError("Error: Spaceship texture 'spaceship_placeholder' is(missing or invalid")
         }
         super.init(texture: texture, color: .clear, size: CGSize(width: 30, height: 30))
         physicsBody = SKPhysicsBody(rectangleOf: size)
@@ -27,12 +27,12 @@ class Spaceship: SKSpriteNode {
         physicsBody?.collisionBitMask = 0
         physicsBody?.contactTestBitMask = 2
         physicsBody?.isDynamic = true
-        zRotation = 3 * .pi / 2 // Downward (270°)
-        
+        zRotation = 3 * .pi / 2
+
         if let topEmitter = SKEmitterNode(fileNamed: "JetEffect") {
             topEmitter.particleBirthRate = 10
             topEmitter.position = CGPoint(x: 0, y: size.height / 2)
-            topEmitter.zRotation = .pi / 2 // Upward
+            topEmitter.zRotation = .pi / 2
             topEmitter.zPosition = 1
             topEmitter.isHidden = true
             addChild(topEmitter)
@@ -40,11 +40,11 @@ class Spaceship: SKSpriteNode {
         } else {
             print("Error: Failed to load top thruster JetEffect.sks")
         }
-        
+
         if let bottomEmitter = SKEmitterNode(fileNamed: "JetEffect") {
             bottomEmitter.particleBirthRate = 10
             bottomEmitter.position = CGPoint(x: 0, y: -size.height / 2)
-            bottomEmitter.zRotation = 3 * .pi / 2 // Downward
+            bottomEmitter.zRotation = 3 * .pi / 2
             bottomEmitter.zPosition = 1
             bottomEmitter.isHidden = true
             addChild(bottomEmitter)
@@ -53,32 +53,21 @@ class Spaceship: SKSpriteNode {
             print("Error: Failed to load bottom thruster JetEffect.sks")
         }
     }
-    
+
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     func applyThrust(crownDelta: Double) {
         let maxForcePerFrame: CGFloat = 50.0
         let rawForce = CGFloat(crownDelta) * thrustStrength
         let thrustForce = min(max(rawForce, -maxForcePerFrame), maxForcePerFrame)
-        
         topThruster?.isHidden = thrustForce <= 0
         bottomThruster?.isHidden = thrustForce >= 0
     }
-    
+
     func hideThrusters() {
         topThruster?.isHidden = true
         bottomThruster?.isHidden = true
-    }
-    
-    func applyGravitationalForce(from blackHole: BlackHole, direction: CGVector, jetAngle: CGFloat) {
-        let distance = position.distance(to: blackHole.position)
-        let gravitationalConstant: CGFloat = 25000
-        let denominator = max(distance * distance, 1.0)
-        let gravForceMagnitude = gravitationalConstant / denominator
-        let gravForce = CGVector(dx: direction.dx * gravForceMagnitude / distance, dy: 0)
-        
-        physicsBody?.applyForce(gravForce)
     }
 }

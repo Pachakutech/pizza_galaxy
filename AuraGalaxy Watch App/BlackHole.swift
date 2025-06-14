@@ -2,19 +2,18 @@
 //  BlackHole.swift
 //  AuraGalaxy
 //
-//  Created by Pachakutech on 5/27/25
+//  Created by Pachakutech on 5/27/25.
 //
 
 import SpriteKit
 
 @MainActor
-class BlackHole: CelestialObject {
-    private var jetAngle: CGFloat
+class BlackHole: CelestialBody {
+    private var jetAngle: CGFloat = 0
+    private var jetEmitters: [SKEmitterNode] = []
 
     init() {
-        jetAngle = CGFloat.random(in: -.pi / 4...(.pi / 4))
-        let texture = SKTexture(imageNamed: "blackhole_placeholder")
-        super.init(texture: texture, size: CGSize(width: 20, height: 20))
+        super.init(textureName: "blackhole_placeholder", size: CGSize(width: 20, height: 20))
         setupJetEffects()
     }
 
@@ -23,12 +22,14 @@ class BlackHole: CelestialObject {
     }
 
     private func setupJetEffects() {
+        jetAngle = CGFloat.random(in: -.pi / 4...(.pi / 4))
         if let topEmitter = SKEmitterNode(fileNamed: "JetEffect") {
             topEmitter.particleBirthRate = 10
             topEmitter.position = CGPoint(x: 0, y: size.height / 2)
             topEmitter.zRotation = jetAngle
             topEmitter.zPosition = 1
             addChild(topEmitter)
+            jetEmitters.append(topEmitter)
         } else {
             print("Error: Failed to load top JetEffect.sks")
         }
@@ -39,6 +40,7 @@ class BlackHole: CelestialObject {
             bottomEmitter.zRotation = jetAngle + .pi
             bottomEmitter.zPosition = 1
             addChild(bottomEmitter)
+            jetEmitters.append(bottomEmitter)
         } else {
             print("Error: Failed to load bottom JetEffect.sks")
         }
@@ -46,16 +48,18 @@ class BlackHole: CelestialObject {
 
     func updateJetAngle() {
         jetAngle = CGFloat.random(in: -.pi / 4...(.pi / 4))
-        if let topEmitter = children.first(where: { $0 is SKEmitterNode && $0.position.y > 0 }) as? SKEmitterNode {
+        if let topEmitter = jetEmitters.first(where: { $0.position.y > 0 }) {
             topEmitter.zRotation = jetAngle
         }
-        if let bottomEmitter = children.first(where: { $0 is SKEmitterNode && $0.position.y < 0 }) as? SKEmitterNode {
+        if let bottomEmitter = jetEmitters.first(where: { $0.position.y < 0 }) {
             bottomEmitter.zRotation = jetAngle + .pi
         }
     }
 
-    func applyGravitationalForce(to spaceship: Spaceship) {
-        let direction = CGVector(dx: position.x - spaceship.position.x, dy: position.y - spaceship.position.y)
-        spaceship.applyGravitationalForce(from: self, direction: direction, jetAngle: jetAngle)
+    override func reset(spaceshipX: CGFloat, spaceshipY: CGFloat, verticalOffset: CGFloat) {
+        jetEmitters.forEach { $0.removeFromParent() }
+        jetEmitters.removeAll()
+        super.reset(spaceshipX: spaceshipX, spaceshipY: spaceshipY, verticalOffset: verticalOffset)
+        setupJetEffects()
     }
 }

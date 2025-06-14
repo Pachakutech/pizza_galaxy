@@ -13,4 +13,3 @@ extension CGPoint {
         return hypot(self.x - point.x, self.y - point.y)
     }
 }
-

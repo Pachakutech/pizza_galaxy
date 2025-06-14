@@ -1,13 +1,13 @@
 //
-//  ZDepthObject.swift
+//  ZDepthBody.swift
 //  AuraGalaxy
 //
-//  Created on 6/9/25.
+//  Created on 6/9/25
 //
 
 import SpriteKit
 
-protocol ZDepthObject: SKNode {
+protocol ZDepthBody: SKNode {
     var zDepth: CGFloat { get set }
     var zSpeed: CGFloat { get set }
     var initialX: CGFloat { get set }
