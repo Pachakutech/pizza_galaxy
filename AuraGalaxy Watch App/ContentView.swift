@@ -59,7 +59,7 @@ struct ContentView: View {
             gameScene.updateCrownDelta(delta)
         }
         .onChange(of: gameScene.spaceshipPosition) { newPosition, _ in
-            for blackHole in gameScene.blackHoles {
+            for blackHole in gameScene.celestialObjects {
 //                if blackHole.zDepth < 10 && newPosition.distance(to: blackHole.position) < 30 {
 //                    gameWon = true
 //                    print("Win condition met")

@@ -8,26 +8,21 @@
 import SpriteKit
 
 @MainActor
-class BlackHole: SKSpriteNode, ZDepthObject {
-    var zDepth: CGFloat = 100.0
-    var zSpeed: CGFloat = 100.0 / 360.0 // Slower, ~6 seconds
-    var direction: CGFloat = 0
-    var initialX: CGFloat = 0
+class BlackHole: CelestialObject {
     private var jetAngle: CGFloat
-    
+
     init() {
         jetAngle = CGFloat.random(in: -.pi / 4...(.pi / 4))
         let texture = SKTexture(imageNamed: "blackhole_placeholder")
-        guard texture.size() != .zero else {
-            fatalError("Error: BlackHole texture 'blackhole_placeholder' is missing or invalid")
-        }
-        super.init(texture: texture, color: .clear, size: CGSize(width: 20, height: 20))
-        physicsBody = SKPhysicsBody(circleOfRadius: size.width / 2)
-        physicsBody?.isDynamic = false
-        physicsBody?.categoryBitMask = 2
-        physicsBody?.collisionBitMask = 0
-        physicsBody?.contactTestBitMask = 1
-        
+        super.init(texture: texture, size: CGSize(width: 20, height: 20))
+        setupJetEffects()
+    }
+
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func setupJetEffects() {
         if let topEmitter = SKEmitterNode(fileNamed: "JetEffect") {
             topEmitter.particleBirthRate = 10
             topEmitter.position = CGPoint(x: 0, y: size.height / 2)
@@ -37,7 +32,7 @@ class BlackHole: SKSpriteNode, ZDepthObject {
         } else {
             print("Error: Failed to load top JetEffect.sks")
         }
-        
+
         if let bottomEmitter = SKEmitterNode(fileNamed: "JetEffect") {
             bottomEmitter.particleBirthRate = 10
             bottomEmitter.position = CGPoint(x: 0, y: -size.height / 2)
@@ -48,11 +43,7 @@ class BlackHole: SKSpriteNode, ZDepthObject {
             print("Error: Failed to load bottom JetEffect.sks")
         }
     }
-    
-    required init?(coder aDecoder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
+
     func updateJetAngle() {
         jetAngle = CGFloat.random(in: -.pi / 4...(.pi / 4))
         if let topEmitter = children.first(where: { $0 is SKEmitterNode && $0.position.y > 0 }) as? SKEmitterNode {
@@ -62,7 +53,7 @@ class BlackHole: SKSpriteNode, ZDepthObject {
             bottomEmitter.zRotation = jetAngle + .pi
         }
     }
-    
+
     func applyGravitationalForce(to spaceship: Spaceship) {
         let direction = CGVector(dx: position.x - spaceship.position.x, dy: position.y - spaceship.position.y)
         spaceship.applyGravitationalForce(from: self, direction: direction, jetAngle: jetAngle)
