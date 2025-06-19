@@ -28,25 +28,25 @@ class GameScene: SKScene, ObservableObject {
     private let blackHoleProbability = 0.2
     private let placidPeriodFrames = 60
     private let spawnIntervalFrames = 15
-
+    
     override init(size: CGSize) {
         super.init(size: size)
         setupScene()
     }
-
+    
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         setupScene()
     }
-
+    
     private func setupScene() {
         physicsWorld.gravity = CGVector(dx: 0, dy: 0)
-
+        
         let cameraNode = SKCameraNode()
         cameraNode.position = CGPoint(x: size.width / 2, y: size.height / 2)
         camera = cameraNode
         addChild(cameraNode)
-
+        
         let backgroundTexture = SKTexture(imageNamed: "galaxy_background")
         if backgroundTexture.size() == .zero {
             print("Error: Galaxy background texture 'galaxy_background' is missing or invalid")
@@ -60,13 +60,13 @@ class GameScene: SKScene, ObservableObject {
             addChild(background)
             backgroundNodes.append(background)
         }
-
+        
         spaceship = Spaceship()
         spaceship.position = CGPoint(x: size.width / 2, y: size.height / 2)
         spaceshipPosition = spaceship.position
         spaceship.zPosition = 10
         addChild(spaceship)
-
+        
         for _ in 0..<maxCelestialBodies {
             let isBlackHole = CGFloat.random(in: 0...1) < blackHoleProbability
             let body: CelestialBody = isBlackHole ? BlackHole() : Star()
@@ -75,22 +75,22 @@ class GameScene: SKScene, ObservableObject {
             inactiveCelestialBodies.append(body)
             addChild(body)
         }
-
+        
         spaceship.physicsBody?.velocity = CGVector.zero
         print("Initial setup: spaceship position: \(spaceship.position), velocity: \(spaceship.physicsBody?.velocity ?? CGVector.zero)")
     }
-
+    
     func handleTap(at location: CGPoint) {
         print("Tap at \(location), no zRotation change")
     }
-
+    
     func updateCrownDelta(_ delta: Double) {
         crownDelta += delta
     }
-
+    
     override func update(_ currentTime: TimeInterval) {
         frameCount += 1
-
+        
         // Lock spaceship y-position
         spaceship.position.y = size.height / 2
         if let physicsBody = spaceship.physicsBody {
@@ -98,11 +98,11 @@ class GameScene: SKScene, ObservableObject {
             let maxSpeed: CGFloat = 200.0
             physicsBody.velocity.dx = max(min(physicsBody.velocity.dx, maxSpeed), -maxSpeed)
         }
-
+        
         if let camera = camera {
             camera.position = spaceship.position
         }
-
+        
         if crownDelta != 0 {
             lastCrownInputTime = currentTime
             spaceship.applyThrust(crownDelta: crownDelta)
@@ -112,7 +112,7 @@ class GameScene: SKScene, ObservableObject {
         } else if currentTime - lastCrownInputTime > 0.25 {
             spaceship.hideThrusters()
         }
-
+        
         // Background update
         let backgroundWidth: CGFloat = 1024
         let backgroundHeight = size.height * 1.8
@@ -139,7 +139,7 @@ class GameScene: SKScene, ObservableObject {
             }
         }
         print("Background y=\(backgroundY), verticalOffset=\(verticalOffset), backgroundOffset=\(backgroundOffset), speedFactor=\(speedFactor)")
-
+        
         // Placid period
         if placidFrameCount > 0 {
             placidFrameCount -= 1
@@ -149,7 +149,7 @@ class GameScene: SKScene, ObservableObject {
             activeStars.removeAll()
             return
         }
-
+        
         // Spawn one celestial body every 15 frames
         if frameCount % spawnIntervalFrames == 0 && (activeBlackHoles.count + activeStars.count) < maxCelestialBodies && !isAnimatingOrbit {
             let isBlackHole = CGFloat.random(in: 0...1) < blackHoleProbability
@@ -165,7 +165,7 @@ class GameScene: SKScene, ObservableObject {
             addChild(newBody) // Ensure added to scene
             print("Spawned \(isBlackHole ? "BlackHole" : "Star") at angle: \(newBody.initialAngle * 180 / .pi)°, distance: \(newBody.initialDistance)")
         }
-
+        
         if isAnimatingOrbit {
             if let collidedBlackHole = animatingBlackHole {
                 collidedBlackHole.zDepth -= collidedBlackHole.zSpeed
@@ -178,7 +178,7 @@ class GameScene: SKScene, ObservableObject {
             }
             return
         }
-
+        
         // Update active celestial bodies
         var bodiesToReset: [CelestialBody] = []
         for body in activeBlackHoles + activeStars {
@@ -187,7 +187,7 @@ class GameScene: SKScene, ObservableObject {
                 bodiesToReset.append(body)
             } else {
                 body.updatePositionAndScale(spaceshipX: spaceship.position.x, spaceshipY: spaceship.position.y, verticalOffset: verticalOffset)
-
+                
                 let distance = spaceship.position.distance(to: body.position)
                 let collisionThreshold = (spaceship.size.width / 2 + body.size.width / 2)
                 if distance < collisionThreshold && body.zDepth < 10 {
@@ -202,7 +202,7 @@ class GameScene: SKScene, ObservableObject {
             }
             body.applyGravitationalForce(to: spaceship)
         }
-
+        
         // Reset bodies
         for body in bodiesToReset {
             body.isHidden = true
@@ -210,26 +210,26 @@ class GameScene: SKScene, ObservableObject {
             activeStars.removeAll { $0 === body }
             inactiveCelestialBodies.append(body)
         }
-
+        
         spaceshipPosition = spaceship.position
     }
-
+    
     private func startOrbitAnimation(for blackHole: BlackHole) {
         isAnimatingOrbit = true
         animatingBlackHole = blackHole
-
+        
         let radius: CGFloat = 20.0
         let orbitPath = UIBezierPath(arcCenter: spaceship.position, radius: radius, startAngle: 0, endAngle: .pi * 2, clockwise: true)
         let orbitAction = SKAction.follow(orbitPath.cgPath, asOffset: false, orientToPath: false, duration: 3.0)
         let repeatOrbit = SKAction.repeat(orbitAction, count: 2)
-
+        
         for body in activeBlackHoles + activeStars {
             if body !== blackHole {
                 body.run(repeatOrbit)
                 print("Started orbit animation for \(body is BlackHole ? "BlackHole" : "Star") at position: \(body.position)")
             }
         }
-
+        
         let wait = SKAction.wait(forDuration: 3.0)
         let endAnimation = SKAction.run { [weak self] in
             guard let self = self else { return }
@@ -246,11 +246,9 @@ class GameScene: SKScene, ObservableObject {
         }
         run(SKAction.sequence([wait, endAnimation]))
     }
-
+    
     private func applyEndForce(to blackHole: BlackHole) {
-        let jetAngle = blackHole.children
-            .first(where: { $0 is SKEmitterNode && $0.position.y > 0 })?
-            .zRotation ?? 0
+        let jetAngle = blackHole.zRotation // Use black hole's rotation
         let isAbove = spaceship.position.y > blackHole.position.y
         let forceAngle = isAbove ? jetAngle + .pi : jetAngle
         let forceMagnitude: CGFloat = 2000.0
