@@ -23,16 +23,17 @@ class BlackHole: CelestialBody {
     }
 
     private func setupJetEffects() {
-        jetAngle = CGFloat.random(in: -.pi / 4...(.pi / 4))
+        // Generate jet angle with bias towards horizontal
+        jetAngle = generateBiasedJetAngle()
         self.zRotation = jetAngle
 
         // Set hit box dimensions
-        let hitBoxWidth: CGFloat = 20.0 // Half of previous 40.0, matches black hole width
-        let hitBoxLength: CGFloat = hitBoxWidth * 5.0 // 5x width (100.0)
+        let hitBoxWidth: CGFloat = 5.0 // Unchanged
+        let hitBoxLength: CGFloat = 75.0 // Changed to 75.0 (15:1 ratio)
 
         // Top jet emitter and hit box
         guard let topEmitter = SKEmitterNode(fileNamed: "JetEffect") else {
-            return // Skip if asset is missing, no print to reduce overhead
+            return // Skip if asset is missing
         }
         topEmitter.particleBirthRate = 10
         topEmitter.position = CGPoint(x: 0, y: size.height / 2)
@@ -54,11 +55,11 @@ class BlackHole: CelestialBody {
 
         // Bottom jet emitter and hit box
         guard let bottomEmitter = SKEmitterNode(fileNamed: "JetEffect") else {
-            return // Skip if asset is missing, no print to reduce overhead
+            return // Skip if asset is missing
         }
         bottomEmitter.particleBirthRate = 10
         bottomEmitter.position = CGPoint(x: 0, y: -size.height / 2)
-        bottomEmitter.zRotation = .pi // Rotate 180° to emit outward from south pole
+        bottomEmitter.zRotation = .pi // Emits outward from south pole
         bottomEmitter.zPosition = 1
         addChild(bottomEmitter)
         jetEmitters.append(bottomEmitter)
@@ -75,8 +76,23 @@ class BlackHole: CelestialBody {
         jetHitBoxes.append(bottomHitBox)
     }
 
+    private func generateBiasedJetAngle() -> CGFloat {
+        // Use a Gaussian-like distribution to bias towards π/2 (vertical), then shift to horizontal
+        let maxAngle: CGFloat = .pi / 2 // Limit to [-π/2, π/2]
+        let sigma: CGFloat = .pi / 6 // Standard deviation (~30°)
+        var angle: CGFloat
+        repeat {
+            // Approximate Gaussian using Box-Muller transform
+            let u1 = CGFloat.random(in: 0...1)
+            let u2 = CGFloat.random(in: 0...1)
+            let z = sqrt(-2.0 * log(u1)) * cos(2.0 * .pi * u2)
+            angle = z * sigma
+        } while abs(angle) > maxAngle // Reject angles outside [-π/2, π/2]
+        return angle + .pi / 2 // Shift by π/2 to bias towards horizontal (0 or π)
+    }
+
     func updateJetAngle() {
-        jetAngle = CGFloat.random(in: -.pi / 4...(.pi / 4))
+        jetAngle = generateBiasedJetAngle()
         self.zRotation = jetAngle
         print("Updated black hole rotation: jetAngle=\(jetAngle * 180 / .pi)°")
     }
