@@ -10,9 +10,9 @@ import SpriteKit
 @MainActor
 class CelestialBody: SKSpriteNode, ZDepthBody {
     var zDepth: CGFloat = 100.0
-    var zSpeed: CGFloat = 100.0 / 60.0 // ~1 second, was 100.0 / 180.0
+    var zSpeed: CGFloat = (100.0 / 60.0) / 3.0 // ~3 seconds, was 100.0 / 60.0
     var direction: CGFloat = 0
-    var initialX: CGFloat = 0 // For protocol/logging
+    var initialX: CGFloat = 0
     var mass: CGFloat = 1.0
     var initialAngle: CGFloat = 0
     var initialDistance: CGFloat = 0
@@ -42,7 +42,7 @@ class CelestialBody: SKSpriteNode, ZDepthBody {
     func updatePositionAndScale(spaceshipX: CGFloat, spaceshipY: CGFloat, verticalOffset: CGFloat) {
         let scale = 0.1 + (1 - zDepth / 100) * 0.9
         setScale(scale)
-        let radialFactor = (100 - zDepth) / 100 // 0 at zDepth=100, 1 at zDepth=0
+        let radialFactor = (100 - zDepth) / 100
         position = CGPoint(
             x: spaceshipX + initialDistance * cos(initialAngle) * radialFactor,
             y: spaceshipY + initialDistance * sin(initialAngle) * radialFactor + verticalOffset
@@ -52,11 +52,10 @@ class CelestialBody: SKSpriteNode, ZDepthBody {
 
     func reset(spaceshipX: CGFloat, spaceshipY: CGFloat, verticalOffset: CGFloat) {
         initialAngle = CGFloat.random(in: 0...(2 * .pi))
-        initialDistance = CGFloat.random(in: 75...150) // 5X larger, was 15...30
-        // Avoid spawning within ±5 points of spaceship x
+        initialDistance = CGFloat.random(in: 75...150)
         let excludeRange: CGFloat = 5
         let xOffset = CGFloat.random(in: excludeRange...(12 + excludeRange)) * (Bool.random() ? 1 : -1)
-        initialX = spaceshipX + xOffset // For logging
+        initialX = spaceshipX + xOffset
         zDepth = 100
         setScale(0.1)
         direction = 0
