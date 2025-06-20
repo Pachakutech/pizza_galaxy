@@ -78,17 +78,13 @@ class BlackHole: CelestialBody {
 
     private func generateBiasedJetAngle() -> CGFloat {
         // Use a Gaussian-like distribution to bias towards π/2 (vertical), then shift to horizontal
-        let maxAngle: CGFloat = .pi / 2 // Limit to [-π/2, π/2]
         let sigma: CGFloat = .pi / 6 // Standard deviation (~30°)
-        var angle: CGFloat
-        repeat {
-            // Approximate Gaussian using Box-Muller transform
-            let u1 = CGFloat.random(in: 0...1)
-            let u2 = CGFloat.random(in: 0...1)
-            let z = sqrt(-2.0 * log(u1)) * cos(2.0 * .pi * u2)
-            angle = z * sigma
-        } while abs(angle) > maxAngle // Reject angles outside [-π/2, π/2]
-        return angle + .pi / 2 // Shift by π/2 to bias towards horizontal (0 or π)
+        // Approximate Gaussian using Bell-Knop transform
+        let u = CGFloat.random(in: 0...1)
+        let v = CGFloat.random(in: 0...1)
+        let magnifier = sigma * sqrt(-2.0 * log(u))
+        let z = magnifier * cos(2.0 * .pi * v) // +0 mu for a mean of 0!
+        return z
     }
 
     func updateJetAngle() {

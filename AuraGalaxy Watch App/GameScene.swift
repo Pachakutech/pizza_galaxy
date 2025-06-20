@@ -230,14 +230,23 @@ class GameScene: SKScene, ObservableObject {
                             let distanceToHitBox = spaceship.position.distance(to: hitBoxWorldPosition)
                             let hitBoxSize = hitBox.size
                             let collisionThreshold = (spaceship.size.width / 2 + hitBoxSize.width / 2)
-                            if distanceToHitBox < collisionThreshold && body.zDepth < 10 {
+                            if distanceToHitBox < collisionThreshold {
                                 let distanceToBlackHole = spaceship.position.distance(to: blackHole.position)
-                                let maxForce: CGFloat = 3000.0
-                                let minForce: CGFloat = 1000.0
-                                let forceMagnitude = max(minForce, maxForce * (1.0 - body.zDepth / 100.0))
-                                let forceAngle = isTop ? blackHole.zRotation : blackHole.zRotation + .pi
+                                let maxForce: CGFloat = 30000.0
+                                let baseForce = maxForce * (1.0 - body.zDepth / 100.0)
+                                // Calculate force gradient based on position along hit box length
+                                let hitBoxLocalSpaceshipPos = blackHole.convert(spaceship.position, from: self)
+                                let hitBoxLength = hitBox.size.height // 75.0
+                                let baseY = isTop ? blackHole.size.height / 2 : -blackHole.size.height / 2 // ±10.0
+                                let tipY = isTop ? baseY + hitBoxLength : baseY - hitBoxLength // ±85.0
+                                let relativeY = isTop ? hitBoxLocalSpaceshipPos.y : -hitBoxLocalSpaceshipPos.y
+                                let t = max(0.0, min(1.0, (relativeY - baseY) / (tipY - baseY))) // 0 at base, 1 at tip
+                                let forceScale = 1.0 - 0.75 * t // 1.0 at base, 0.25 at tip
+                                // Calculate repulsive force direction turned in the frame of reference of the spaceship
+                                let forceAngle = blackHole.zRotation - (isTop ? 0 : .pi) + .pi / 2
+                                let forceMagnitude = (baseForce * forceScale) / max(1.0, body.zDepth)
                                 applyForceToSpaceship(forceAngle: forceAngle, forceMagnitude: forceMagnitude)
-                                print("Jet hit box collision: distanceToBlackHole=\(distanceToBlackHole), zDepth=\(body.zDepth), forceMagnitude=\(forceMagnitude), forceAngle=\(forceAngle * 180 / .pi)°")
+                                print("Jet hit box collision: distanceToBlackHole=\(distanceToBlackHole), zDepth=\(body.zDepth), forceMagnitude=\(forceMagnitude), forceAngle=\(forceAngle * 180 / .pi)°, t=\(t), forceScale=\(forceScale)")
                             }
                         }
                     }
