@@ -14,7 +14,7 @@ class BlackHole: CelestialBody {
     private var jetHitBoxes: [SKSpriteNode] = []
 
     init() {
-        super.init(textureName: "blackhole_placeholder", size: CGSize(width: 20, height: 20), mass: 1.0)
+        super.init(textureName: "blackhole_placeholder", size: CGSize(width: 20, height: 20), mass: 2.0)
         setupJetEffects()
     }
 
@@ -29,7 +29,7 @@ class BlackHole: CelestialBody {
 
         // Set hit box dimensions
         let hitBoxWidth: CGFloat = 5.0 // Unchanged
-        let hitBoxLength: CGFloat = 75.0 // Changed to 75.0 (15:1 ratio)
+        let hitBoxLength: CGFloat = 100.0 // Changed to 75.0 (20:1 ratio)
 
         // Top jet emitter and hit box
         guard let topEmitter = SKEmitterNode(fileNamed: "JetEffect") else {
