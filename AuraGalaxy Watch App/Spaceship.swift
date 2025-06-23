@@ -19,14 +19,7 @@ class Spaceship: SKSpriteNode {
             fatalError("Error: Spaceship texture 'spaceship_placeholder' is missing or invalid")
         }
         super.init(texture: texture, color: .clear, size: CGSize(width: 30, height: 30))
-        physicsBody = SKPhysicsBody(rectangleOf: size)
-        physicsBody?.mass = 1.0
-        physicsBody?.friction = 0.0
-        physicsBody?.linearDamping = 0.2
-        physicsBody?.categoryBitMask = 1
-        physicsBody?.collisionBitMask = 0
-        physicsBody?.contactTestBitMask = 2
-        physicsBody?.isDynamic = true
+        
         zRotation = 3 * .pi / 2
 
         if let topEmitter = SKEmitterNode(fileNamed: "JetEffect") {

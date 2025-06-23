@@ -47,6 +47,7 @@ class CelestialBody: SKSpriteNode, ZDepthBody {
             x: spaceshipX + initialDistance * cos(initialAngle) * radialFactor,
             y: spaceshipY + initialDistance * sin(initialAngle) * radialFactor + verticalOffset
         )
+        zPosition = 20 - zDepth / 20 // zDepth 0 -> zPosition 20, zDepth 100 -> zPosition 0
         print("Updated \(texture?.description ?? "unknown"): zDepth=\(zDepth), radialFactor=\(radialFactor), pos=\(position)")
     }
 
@@ -56,22 +57,12 @@ class CelestialBody: SKSpriteNode, ZDepthBody {
         let excludeRange: CGFloat = 5
         let xOffset = CGFloat.random(in: excludeRange...(12 + excludeRange)) * (Bool.random() ? 1 : -1)
         initialX = spaceshipX + xOffset
+        zPosition = 0 // Matches zDepth = 100
         zDepth = 100
         zSpeed = zNewSpeed
         setScale(0.1)
         direction = 0
         isHidden = false
         print("Reset CelestialBody (\(texture?.description ?? "unknown")) at angle: \(initialAngle * 180 / .pi)°, distance: \(initialDistance), x: \(initialX)")
-    }
-
-    func applyGravitationalForce(to spaceship: Spaceship, ) -> CGFloat { // TODO: need to account for Y here or at calling site
-        let direction = CGVector(dx: position.x - spaceship.position.x, dy: position.y - spaceship.position.y)
-        let distance = position.distance(to: spaceship.position)
-        let gravitationalConstant: CGFloat = 25000
-        let denominator = max(distance * distance, 1.0)
-        let gravForceMagnitude = (gravitationalConstant * mass) / denominator
-        let gravForce = CGVector(dx: direction.dx * gravForceMagnitude / distance, dy: 0)
-        spaceship.physicsBody?.applyForce(gravForce)
-        return direction.dx * gravForceMagnitude / distance
     }
 }
