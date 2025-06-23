@@ -20,8 +20,8 @@ class Star: CelestialBody {
         fatalError("init(coder:) has not been implemented")
     }
 
-    override func reset(spaceshipX: CGFloat, spaceshipY: CGFloat, verticalOffset: CGFloat) {
-        super.reset(spaceshipX: spaceshipY, spaceshipY: spaceshipY, verticalOffset: verticalOffset)
+    override func reset(spaceshipX: CGFloat, spaceshipY: CGFloat, verticalOffset: CGFloat, zNewSpeed: CGFloat) {
+        super.reset(spaceshipX: spaceshipY, spaceshipY: spaceshipY, verticalOffset: verticalOffset, zNewSpeed: zNewSpeed)
         // Reapply debug border
         color = .red
         colorBlendFactor = 0.1 // Remove after testing

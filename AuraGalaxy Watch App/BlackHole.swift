@@ -28,8 +28,8 @@ class BlackHole: CelestialBody {
         self.zRotation = jetAngle
 
         // Set hit box dimensions
-        let hitBoxWidth: CGFloat = 5.0 // Unchanged
-        let hitBoxLength: CGFloat = 100.0 // Changed to 75.0 (20:1 ratio)
+        let hitBoxWidth: CGFloat = 5.0
+        let hitBoxLength: CGFloat = 140.0
 
         // Top jet emitter and hit box
         guard let topEmitter = SKEmitterNode(fileNamed: "JetEffect") else {
@@ -100,12 +100,12 @@ class BlackHole: CelestialBody {
         }
     }
 
-    override func reset(spaceshipX: CGFloat, spaceshipY: CGFloat, verticalOffset: CGFloat) {
+    override func reset(spaceshipX: CGFloat, spaceshipY: CGFloat, verticalOffset: CGFloat, zNewSpeed: CGFloat) {
         jetEmitters.forEach { $0.removeFromParent() }
         jetEmitters.removeAll()
         jetHitBoxes.forEach { $0.removeFromParent() }
         jetHitBoxes.removeAll()
-        super.reset(spaceshipX: spaceshipX, spaceshipY: spaceshipY, verticalOffset: verticalOffset)
+        super.reset(spaceshipX: spaceshipX, spaceshipY: spaceshipY, verticalOffset: verticalOffset, zNewSpeed: zNewSpeed)
         setupJetEffects()
     }
 }

@@ -2,11 +2,12 @@
 //  ZDepthBody.swift
 //  AuraGalaxy
 //
-//  Created on 6/9/25
+//  Created by Pachakutech on 6/9/25
 //
 
 import SpriteKit
 
+@MainActor
 protocol ZDepthBody: SKNode {
     var zDepth: CGFloat { get set }
     var zSpeed: CGFloat { get set }
