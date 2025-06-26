@@ -144,7 +144,6 @@ class GameScene: SKScene, ObservableObject {
         // Update background
         let backgroundWidth: CGFloat = 1024
         let xCameraPosition = spaceship.position.x
-        print("xCamPos: \(xCameraPosition); real: \(camera?.position.x ?? -99)")
         let yMaxOffset = size.height * 0.4
         let yBaseSpeed: CGFloat = yMaxOffset / (60 * 10)
         let ySpeedFactor = yBaseSpeed * (verticalOffset / yMaxOffset)
@@ -225,7 +224,7 @@ class GameScene: SKScene, ObservableObject {
                             startOrbitAnimation(for: body as! BlackHole)
                         } else {
                             print("Star collision detected, TBI game state or texture change")
-                            bodiesToReset.append(body)
+                            changeFace(of: body, to: "lovey_face")
                         }
                     }
 
@@ -262,7 +261,7 @@ class GameScene: SKScene, ObservableObject {
         spaceshipPosition = spaceship.position
     }
     
-       private func startOrbitAnimation(for blackHole: BlackHole) {
+    private func startOrbitAnimation(for blackHole: BlackHole) {
         isAnimatingOrbit = true
         animatingBlackHole = blackHole
         zSpeedAvg = zSpeedDefault
@@ -304,6 +303,10 @@ class GameScene: SKScene, ObservableObject {
         }
         run(SKAction.sequence([wait, endAnimation]))
     }
+    
+    private func changeFace(of body: CelestialBody, to textureName: String) {
+        body.texture = SKTexture(imageNamed: textureName)
+    }
 
     private func applyGravitationalForce(from body: CelestialBody) {
         let direction = CGFloat(atan2(body.position.y - spaceship.position.y, body.position.x - spaceship.position.x))
@@ -342,6 +345,6 @@ class GameScene: SKScene, ObservableObject {
         let forceZ = sin(forceAngle) * forceMagnitude
         zAccDelta += CGFloat(forceZ / gravitationalConstant)
         spaceshipXForce += forceX
-        print("Applied force: angle \(forceAngle * 180 / .pi)°, force: (\(forceX), 0.0)")
+        print("Applied force: angle \(forceAngle * 180 / .pi)°, forceX: \(forceX), forceZ: \(forceZ)")
     }
 }
