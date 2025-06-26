@@ -9,13 +9,15 @@ import SpriteKit
 import Combine
 
 let maxSpaceshipSpeedX: CGFloat = 200.0
-let zSpeedDefault: CGFloat = (60.0 / 100.0)
+let zSpeedDefault: CGFloat = (30.0 / 100.0)
 let zSpeedUpperLimit = zSpeedDefault * 5.0
 let zSpeedLowerLimit = zSpeedDefault / 10.0
-let scrollSpeed: CGFloat = 0.1 / 60.0
-let maxJetForce: CGFloat = 6000.0
+let bgScrollSpeed: CGFloat = 0.2 / 60.0
+let celestialScrollSpeed: CGFloat = 1.6 / 60.0
+let maxJetForce: CGFloat = 2000.0
+let xDamping: CGFloat = 0.9
 let blackHoleEjectionForceMagnitude: CGFloat = 8000.0
-let gravitationalConstant: CGFloat = 2500
+let gravitationalConstant: CGFloat = 5000
 let verticalOffsetSigma: CGFloat = 0.4
 
 @MainActor
@@ -104,7 +106,10 @@ class GameScene: SKScene, ObservableObject {
 
     override func update(_ currentTime: TimeInterval) {
         frameCount += 1
-
+        
+        // Set spaceship angle
+//        spaceship.zRotation = CGFloat(atan2f(Float(zAccDelta), Float(spaceshipXForce)))
+        
         let zAccBase = zAccDelta
         zAccDelta = 0.0
         if zAccBase != 0.0 {
@@ -112,8 +117,7 @@ class GameScene: SKScene, ObservableObject {
         }
 
         // Update spaceship position and velocity
-        let damping: CGFloat = 0.8 // Equivalent to linearDamping = 0.2
-        spaceshipXVelocity = spaceshipXVelocity * damping + spaceshipXForce
+        spaceshipXVelocity = spaceshipXVelocity * xDamping + spaceshipXForce
         spaceshipXVelocity = max(min(spaceshipXVelocity, maxSpaceshipSpeedX), -maxSpaceshipSpeedX)
         spaceship.position.x += spaceshipXVelocity / 60.0 // Assuming 60 FPS
         spaceship.position.y = size.height / 2 // Lock y-position
@@ -140,13 +144,14 @@ class GameScene: SKScene, ObservableObject {
         // Update background
         let backgroundWidth: CGFloat = 1024
         let xCameraPosition = spaceship.position.x
+        print("xCamPos: \(xCameraPosition); real: \(camera?.position.x ?? -99)")
         let yMaxOffset = size.height * 0.4
         let yBaseSpeed: CGFloat = yMaxOffset / (60 * 10)
         let ySpeedFactor = yBaseSpeed * (verticalOffset / yMaxOffset)
         yBackgroundOffset += ySpeedFactor
         yBackgroundOffset = min(max(yBackgroundOffset, -yMaxOffset), yMaxOffset)
         let yBackgroundPosition = size.height / 2 - yBackgroundOffset
-        let xScrollOffset = spaceshipXVelocity * scrollSpeed
+        let xScrollOffset = spaceshipXVelocity * bgScrollSpeed
         for background in backgroundNodes {
             var newX = background.position.x + xScrollOffset
             if newX < xCameraPosition - backgroundWidth / 2 - size.width / 2 {
@@ -205,7 +210,8 @@ class GameScene: SKScene, ObservableObject {
             if body.zDepth <= 0 {
                 bodiesToReset.append(body)
             } else {
-                body.updatePositionAndScale(spaceshipX: spaceship.position.x, spaceshipY: spaceship.position.y, verticalOffset: verticalOffset)
+                let relativeXOffset = -spaceshipXVelocity * celestialScrollSpeed // Apply opposite motion based on spaceship velocity
+                body.updatePositionAndScale(spaceshipX: spaceship.position.x, spaceshipY: spaceship.position.y, verticalOffset: verticalOffset, xOffset: relativeXOffset)
 
                 let distance = spaceship.position.distance(to: body.position)
                 body.zSpeed = max(zSpeedLowerLimit, min(zSpeedUpperLimit, body.zSpeed + zAccBase))
@@ -294,6 +300,7 @@ class GameScene: SKScene, ObservableObject {
             self.activeStars.removeAll()
             self.placidFrameCount = self.placidPeriodFrames
             self.animatingBlackHole = nil
+            zSpeedAvg = zSpeedDefault
         }
         run(SKAction.sequence([wait, endAnimation]))
     }

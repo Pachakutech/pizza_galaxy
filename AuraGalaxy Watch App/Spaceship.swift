@@ -20,7 +20,7 @@ class Spaceship: SKSpriteNode {
         }
         super.init(texture: texture, color: .clear, size: CGSize(width: 30, height: 30))
         
-        zRotation = 3 * .pi / 2
+        zRotation = 0
 
         if let topEmitter = SKEmitterNode(fileNamed: "JetEffect") {
             topEmitter.particleBirthRate = 10
@@ -55,8 +55,8 @@ class Spaceship: SKSpriteNode {
         let maxForcePerFrame: CGFloat = 50.0
         let rawForce = CGFloat(crownDelta) * thrustStrength
         let thrustForce = min(max(rawForce, -maxForcePerFrame), maxForcePerFrame)
-        topThruster?.isHidden = thrustForce <= 0
-        bottomThruster?.isHidden = thrustForce >= 0
+//        topThruster?.isHidden = thrustForce <= 0
+//        bottomThruster?.isHidden = thrustForce >= 0
     }
 
     func hideThrusters() {

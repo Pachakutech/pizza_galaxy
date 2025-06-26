@@ -38,19 +38,19 @@ class CelestialBody: SKSpriteNode, ZDepthBody {
         physicsBody?.collisionBitMask = 0
         physicsBody?.contactTestBitMask = 1
     }
-
-    func updatePositionAndScale(spaceshipX: CGFloat, spaceshipY: CGFloat, verticalOffset: CGFloat) {
+    
+    func updatePositionAndScale(spaceshipX: CGFloat, spaceshipY: CGFloat, verticalOffset: CGFloat, xOffset: CGFloat) {
         let scale = 0.1 + (1 - zDepth / 100) * 0.9
         setScale(scale)
         let radialFactor = (100 - zDepth) / 100
         position = CGPoint(
-            x: spaceshipX + initialDistance * cos(initialAngle) * radialFactor,
+            x: spaceshipX + initialDistance * cos(initialAngle) * radialFactor + xOffset,
             y: spaceshipY + initialDistance * sin(initialAngle) * radialFactor + verticalOffset
         )
         zPosition = 20 - zDepth / 20 // zDepth 0 -> zPosition 20, zDepth 100 -> zPosition 0
-        print("Updated \(texture?.description ?? "unknown"): zDepth=\(zDepth), radialFactor=\(radialFactor), pos=\(position)")
+        print("Updated \(texture?.description ?? "unknown"): zDepth=\(zDepth), zPosition=\(zPosition), radialFactor=\(radialFactor), pos=\(position), relativeXOffset=\(xOffset)")
     }
-
+    
     func reset(spaceshipX: CGFloat, spaceshipY: CGFloat, verticalOffset: CGFloat, zNewSpeed: CGFloat) {
         initialAngle = CGFloat.random(in: 0...(2 * .pi))
         initialDistance = CGFloat.random(in: 75...150)
