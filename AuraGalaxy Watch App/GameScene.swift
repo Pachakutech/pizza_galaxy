@@ -164,12 +164,11 @@ class GameScene: SKScene, ObservableObject {
         let xCelestialOffset = -spaceshipXVelocity * celestialScrollSpeed
         var bodiesToReset: [CelestialBody] = []
         for body in activeBlackHoles + activeStars {
-            body.xCumulativeOffset += xCelestialOffset // Accumulate offset
             body.zDepth -= body.zSpeed
             if body.zDepth <= 0 {
                 bodiesToReset.append(body)
             } else {
-                body.updatePositionAndScale(spaceshipX: spaceship.position.x, spaceshipY: spaceship.position.y, verticalOffset: verticalOffset, xOffset: body.xCumulativeOffset)
+                body.updatePositionAndScale(spaceshipX: spaceship.position.x, spaceshipY: spaceship.position.y, verticalOffset: verticalOffset, xOffset: xCelestialOffset)
 
                 let distance = spaceship.position.distance(to: body.position)
                 body.zSpeed = max(zSpeedLowerLimit, min(zSpeedUpperLimit, body.zSpeed + zAccBase))
@@ -220,7 +219,7 @@ class GameScene: SKScene, ObservableObject {
             } else {
                 newBody = isBlackHole ? BlackHole() : Star()
             }
-            newBody.reset(spaceshipX: spaceship.position.x, spaceshipY: spaceship.position.y, verticalOffset: verticalOffset, zNewSpeed: zSpeedAvg)
+            newBody.reset(xOffset: spaceshipXVelocity, yOffset: 0.0, verticalOffset: verticalOffset, zNewSpeed: zSpeedAvg)
             newBody.zPosition = -1
             if newBody.parent == nil {
                 addChild(newBody)

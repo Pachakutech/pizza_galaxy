@@ -13,7 +13,9 @@ class CelestialBody: SKSpriteNode, ZDepthBody {
     var zDepth: CGFloat = 100.0
     var mass: CGFloat = 1.0
     var direction: CGFloat = 0
-    var radialMagnitude: CGFloat = 0
+    var radialMagnitude: CGFloat = 100 // sensitivity to changes
+    var xInitialOffset: CGFloat = 0
+    var yInitialOffset: CGFloat = 0
     var xCumulativeOffset: CGFloat = 0 // New property for cumulative x-motion
 
     init(textureName: String, size: CGSize, mass: CGFloat) {
@@ -43,20 +45,24 @@ class CelestialBody: SKSpriteNode, ZDepthBody {
     }
 
     func updatePositionAndScale(spaceshipX: CGFloat, spaceshipY: CGFloat, verticalOffset: CGFloat, xOffset: CGFloat) {
+        xCumulativeOffset += xOffset
         let scale = 0.1 + (1 - zDepth / 100) * 0.9
         setScale(scale)
         let radialFactor = (100 - zDepth) / 100 * radialMagnitude
         position = CGPoint(
-            x: spaceshipX + cos(direction) * radialFactor + xOffset,
+            x: spaceshipX + cos(direction) * radialFactor + xInitialOffset + xCumulativeOffset,
             y: spaceshipY + sin(direction) * radialFactor + verticalOffset
         )
         zPosition = 20 - zDepth / 20 // zDepth 0 -> zPosition 20, zDepth 100 -> zPosition 0
         print("Updated \(texture?.description ?? "unknown"): zDepth=\(zDepth), zPosition=\(zPosition), radialFactor=\(radialFactor), pos=\(position), xOffset=\(xOffset), xCumulativeOffset=\(xCumulativeOffset)")
     }
 
-    func reset(spaceshipX: CGFloat, spaceshipY: CGFloat, verticalOffset: CGFloat, zNewSpeed: CGFloat) {
-        direction = (generateBiasedRadian(sigma: 6) + .pi/2) * (Bool.random() ? 1 : -1)
-        radialMagnitude = CGFloat.random(in: 95...105)
+    func reset(xOffset: CGFloat, yOffset: CGFloat, verticalOffset: CGFloat, zNewSpeed: CGFloat) {
+        let radian = generateBiasedRadian(sigma: 6)
+        let radialOffset = CGFloat.random(in: 5...20)
+        direction = (radian + .pi/2) * (Bool.random() ? 1 : -1)
+        xInitialOffset = cos(direction) * radialOffset + xOffset
+        yInitialOffset = sin(direction) * radialOffset + yOffset
         xCumulativeOffset = 0 // Reset cumulative offset
         zPosition = 0 // Matches zDepth = 100
         zDepth = 100
