@@ -14,7 +14,7 @@ class BlackHole: CelestialBody {
     private var jetHitBoxes: [SKSpriteNode] = []
 
     init() {
-        super.init(textureName: "blackhole_placeholder", size: CGSize(width: 20, height: 20), mass: 0.8)
+        super.init(textureName: "blackhole_placeholder", size: CGSize(width: 20, height: 20), mass: 1.2)
         setupJetEffects()
     }
 
@@ -24,7 +24,7 @@ class BlackHole: CelestialBody {
 
     private func setupJetEffects() {
         // Generate jet angle with bias towards horizontal
-        jetAngle = generateBiasedJetAngle()
+        jetAngle = generateBiasedRadian(sigma: 6, mean: 0)
         self.zRotation = jetAngle
 
         // Set hit box dimensions
@@ -76,19 +76,8 @@ class BlackHole: CelestialBody {
         jetHitBoxes.append(bottomHitBox)
     }
 
-    private func generateBiasedJetAngle() -> CGFloat {
-        // Use a Gaussian-like distribution to bias towards π/2 (vertical), then shift to horizontal
-        let sigma: CGFloat = .pi / 6 // Standard deviation (~30°)
-        // Approximate Gaussian using Bell-Knop transform
-        let u = CGFloat.random(in: 0...1)
-        let v = CGFloat.random(in: 0...1)
-        let magnifier = sigma * sqrt(-2.0 * log(u))
-        let z = magnifier * cos(2.0 * .pi * v) // +0 mu for a mean of 0!
-        return z
-    }
-
     func updateJetAngle() {
-        jetAngle = generateBiasedJetAngle()
+        jetAngle = generateBiasedRadian(sigma: 6, mean: 0)
         self.zRotation = jetAngle
         print("Updated black hole rotation: jetAngle=\(jetAngle * 180 / .pi)°")
     }
