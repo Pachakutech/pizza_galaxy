@@ -39,6 +39,10 @@ class CelestialBody: SKSpriteNode, ZDepthBody {
         physicsBody?.contactTestBitMask = 1
     }
     
+    func changeFace(to textureName: String) {
+        texture = SKTexture(imageNamed: textureName)
+    }
+
     func updatePositionAndScale(spaceshipX: CGFloat, spaceshipY: CGFloat, verticalOffset: CGFloat, xOffset: CGFloat) {
         let scale = 0.1 + (1 - zDepth / 100) * 0.9
         setScale(scale)
