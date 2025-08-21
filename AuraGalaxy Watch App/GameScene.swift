@@ -121,7 +121,7 @@ class GameScene: SKScene, ObservableObject {
         apparentSpaceshipXVelocity = max(min(apparentSpaceshipXVelocity, maxSpaceshipSpeedX), -maxSpaceshipSpeedX)
         let newX = min(size.width * 0.9, max(spaceship.position.x + apparentSpaceshipXVelocity / 60.0 + CGFloat(crownDelta), size.width * 0.1))
         // Downward bow: y = a(x - h)^2 + k
-        let a = -bowDepth / pow(size.width * 0.4, 2) // Parabola coefficient
+        let a = bowDepth / pow(size.width * 0.4, 2) // Parabola coefficient
         let h = size.width / 2
         let k = size.height / 2
         let newY = a * pow(newX - h, 2) + k
