@@ -43,7 +43,7 @@ class GameScene: SKScene, ObservableObject {
     private var spawnIntervalFrames = 15
     private var zAccDelta: CGFloat = 0.0
     private var zSpeedAvg: CGFloat = zSpeedDefault
-    private var spaceshipXVelocity: CGFloat = 0.0
+    private var apparentSpaceshipXVelocity: CGFloat = 0.0
     private var spaceshipXForce: CGFloat = 0.0
     private let maxCelestialBodies = 34
     private let blackHoleProbability = 0.2
@@ -95,7 +95,7 @@ class GameScene: SKScene, ObservableObject {
             inactiveCelestialBodies.append(body)
         }
 
-        print("Initial setup: spaceship position: \(spaceship.position), xVelocity: \(spaceshipXVelocity)")
+        print("Initial setup: spaceship position: \(spaceship.position), xVelocity: \(apparentSpaceshipXVelocity)")
     }
 
     func handleTap(at location: CGPoint) {
@@ -117,9 +117,9 @@ class GameScene: SKScene, ObservableObject {
         }
 
         // Update spaceship position and velocity
-        spaceshipXVelocity = spaceshipXVelocity * xDamping + spaceshipXForce
-        spaceshipXVelocity = max(min(spaceshipXVelocity, maxSpaceshipSpeedX), -maxSpaceshipSpeedX)
-        let newX = min(size.width * 0.9, max(spaceship.position.x + spaceshipXVelocity / 60.0 + CGFloat(crownDelta), size.width * 0.1))
+        apparentSpaceshipXVelocity = apparentSpaceshipXVelocity * xDamping + spaceshipXForce
+        apparentSpaceshipXVelocity = max(min(apparentSpaceshipXVelocity, maxSpaceshipSpeedX), -maxSpaceshipSpeedX)
+        let newX = min(size.width * 0.9, max(spaceship.position.x + apparentSpaceshipXVelocity / 60.0 + CGFloat(crownDelta), size.width * 0.1))
         // Downward bow: y = a(x - h)^2 + k
         let a = -bowDepth / pow(size.width * 0.4, 2) // Parabola coefficient
         let h = size.width / 2
@@ -129,19 +129,22 @@ class GameScene: SKScene, ObservableObject {
         spaceshipXForce = 0.0 // Reset forces
         spaceshipPosition = spaceship.position
         crownDelta = 0 // Reset crownDelta
-
+        
+        let centerX = size.width / 2
+        let centerY = size.height / 2
+        
         // Update camera
         if let camera = camera {
-            camera.position.y = spaceship.position.y
-            camera.position.x = size.width / 2
+            camera.position.y = centerY
+            camera.position.x = centerX
         }
 
         // Handle crown input (y-axis for celestial bodies)
         if crownDelta != 0 {
             lastCrownInputTime = currentTime
             spaceship.applyThrust(crownDelta: crownDelta)
-            verticalOffset += CGFloat(crownDelta) * 15.0
-            verticalOffset = min(max(verticalOffset, -size.height * verticalOffsetSigma), size.height * verticalOffsetSigma)
+//            verticalOffset += CGFloat(crownDelta) * 15.0
+//            verticalOffset = min(max(verticalOffset, -size.height * verticalOffsetSigma), size.height * verticalOffsetSigma)
             print("Crown input: delta=\(crownDelta), verticalOffset=\(verticalOffset)")
         } else if currentTime - lastCrownInputTime > 0.25 {
             spaceship.hideThrusters()
@@ -149,19 +152,19 @@ class GameScene: SKScene, ObservableObject {
 
         // Update background
         let backgroundWidth: CGFloat = 1024
-        let xCameraPosition = size.width / 2 // Align with camera
+        let xCameraPosition = centerX // Align with camera
         let yMaxOffset = size.height * 0.4
         let yBaseSpeed: CGFloat = yMaxOffset / (60 * 10)
         let ySpeedFactor = yBaseSpeed * (verticalOffset / yMaxOffset)
         yBackgroundOffset += ySpeedFactor
         yBackgroundOffset = min(max(yBackgroundOffset, -yMaxOffset), yMaxOffset)
-        let yBackgroundPosition = size.height / 2 - yBackgroundOffset
-        let xScrollOffset = spaceshipXVelocity * bgScrollSpeed
+        let yBackgroundPosition = centerY - yBackgroundOffset
+        let xScrollOffset = apparentSpaceshipXVelocity * bgScrollSpeed
         for background in backgroundNodes {
             var newX = background.position.x + xScrollOffset
-            if newX < xCameraPosition - backgroundWidth / 2 - size.width / 2 {
+            if newX < xCameraPosition - backgroundWidth / 2 - centerX {
                 newX += backgroundWidth * 2
-            } else if newX > xCameraPosition + backgroundWidth / 2 + size.width / 2 {
+            } else if newX > xCameraPosition + backgroundWidth / 2 + centerX {
                 newX -= backgroundWidth * 2
             }
             background.position = CGPoint(x: newX, y: yBackgroundPosition)
@@ -169,14 +172,14 @@ class GameScene: SKScene, ObservableObject {
         print("Background y=\(yBackgroundPosition), verticalOffset=\(verticalOffset), yBackgroundOffset=\(yBackgroundOffset), ySpeedFactor=\(ySpeedFactor)")
 
         // Update celestial bodies
-        let xCelestialOffset = -spaceshipXVelocity * celestialScrollSpeed
+        let xCelestialOffset = -apparentSpaceshipXVelocity * celestialScrollSpeed
         var bodiesToReset: [CelestialBody] = []
         for body in activeBlackHoles + activeStars {
             body.zDepth -= body.zSpeed
             if body.zDepth <= 0 {
                 bodiesToReset.append(body)
             } else {
-                body.updatePositionAndScale(spaceshipX: spaceship.position.x, spaceshipY: spaceship.position.y, verticalOffset: verticalOffset, xOffset: xCelestialOffset)
+                body.updatePositionAndScale(spaceshipX: centerX, spaceshipY: centerY, verticalOffset: verticalOffset, xOffset: xCelestialOffset)
 
                 let distance = spaceship.position.distance(to: body.position)
                 body.zSpeed = max(zSpeedLowerLimit, min(zSpeedUpperLimit, body.zSpeed + zAccBase))
@@ -227,7 +230,7 @@ class GameScene: SKScene, ObservableObject {
             } else {
                 newBody = isBlackHole ? BlackHole() : Star()
             }
-            newBody.reset(xOffset: spaceshipXVelocity, yOffset: 0.0, verticalOffset: verticalOffset, zNewSpeed: zSpeedAvg)
+            newBody.reset(xOffset: apparentSpaceshipXVelocity, yOffset: 0.0, verticalOffset: verticalOffset, zNewSpeed: zSpeedAvg)
             newBody.zPosition = -1
             if newBody.parent == nil {
                 addChild(newBody)
