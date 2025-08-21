@@ -119,12 +119,12 @@ class GameScene: SKScene, ObservableObject {
         // Update spaceship position and velocity
         apparentSpaceshipXVelocity = apparentSpaceshipXVelocity * xDamping + spaceshipXForce
         apparentSpaceshipXVelocity = max(min(apparentSpaceshipXVelocity, maxSpaceshipSpeedX), -maxSpaceshipSpeedX)
-        let newX = min(size.width * 0.9, max(spaceship.position.x + apparentSpaceshipXVelocity / 60.0 + CGFloat(crownDelta), size.width * 0.1))
-        // Downward bow: y = a(x - h)^2 + k
+        let newX = min(size.width * 0.9, max(spaceship.position.x + CGFloat(crownDelta), size.width * 0.1))
+        // bow: y = a(x - h)^2 + k
         let a = bowDepth / pow(size.width * 0.4, 2) // Parabola coefficient
         let h = size.width / 2
         let k = size.height / 2
-        let newY = a * pow(newX - h, 2) + k
+        let newY = -20 + a * pow(newX - h, 2) + k
         spaceship.position = CGPoint(x: newX, y: newY)
         spaceshipXForce = 0.0 // Reset forces
         spaceshipPosition = spaceship.position
