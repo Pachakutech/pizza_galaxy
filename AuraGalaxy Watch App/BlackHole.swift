@@ -14,7 +14,7 @@ class BlackHole: CelestialBody {
     private var jetHitBoxes: [SKSpriteNode] = []
 
     init() {
-        super.init(textureName: "blackhole_placeholder", size: CGSize(width: 20, height: 20), mass: 1.2)
+        super.init(textureName: "blackhole_placeholder", size: CGSize(width: 20, height: 20), mass: 0.8)
         setupJetEffects()
     }
 
