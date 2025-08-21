@@ -128,6 +128,7 @@ class GameScene: SKScene, ObservableObject {
         spaceship.position = CGPoint(x: newX, y: newY)
         spaceshipXForce = 0.0 // Reset forces
         spaceshipPosition = spaceship.position
+        let xCelestialOffset = -apparentSpaceshipXVelocity * celestialScrollSpeed - crownDelta
         crownDelta = 0 // Reset crownDelta
         
         let centerX = size.width / 2
@@ -172,7 +173,6 @@ class GameScene: SKScene, ObservableObject {
         print("Background y=\(yBackgroundPosition), verticalOffset=\(verticalOffset), yBackgroundOffset=\(yBackgroundOffset), ySpeedFactor=\(ySpeedFactor)")
 
         // Update celestial bodies
-        let xCelestialOffset = -apparentSpaceshipXVelocity * celestialScrollSpeed
         var bodiesToReset: [CelestialBody] = []
         for body in activeBlackHoles + activeStars {
             body.zDepth -= body.zSpeed
