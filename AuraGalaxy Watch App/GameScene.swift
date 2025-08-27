@@ -128,7 +128,7 @@ class GameScene: SKScene, ObservableObject {
         spaceship.position = CGPoint(x: newX, y: newY)
         spaceshipXForce = 0.0 // Reset forces
         spaceshipPosition = spaceship.position
-        let xCelestialOffset = -apparentSpaceshipXVelocity * celestialScrollSpeed - crownDelta
+        let xCelestialOffset = -apparentSpaceshipXVelocity * celestialScrollSpeed
         crownDelta = 0 // Reset crownDelta
         
         let centerX = size.width / 2
@@ -348,7 +348,7 @@ class GameScene: SKScene, ObservableObject {
         let forceX = cos(forceAngle) * forceMagnitude
         let forceZ = sin(forceAngle) * forceMagnitude
         zAccDelta += CGFloat(forceZ / zConversionFactor)
-        spaceshipXForce += forceX
+        spaceshipXForce += forceX * 0.05
         print("Applied force: forceAngle \(forceAngle * 180 / .pi)°, forceX: \(forceX), forceZ: \(forceZ)")
     }
 }
