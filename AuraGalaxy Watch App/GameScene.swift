@@ -153,7 +153,6 @@ class GameScene: SKScene, ObservableObject {
 
         // Update background
         let backgroundWidth: CGFloat = 1024
-        let xCameraPosition = centerX // Align with camera
         let yMaxOffset = size.height * 0.4
         let yBaseSpeed: CGFloat = yMaxOffset / (60 * 10)
         let ySpeedFactor = yBaseSpeed * (verticalOffset / yMaxOffset)
@@ -163,9 +162,9 @@ class GameScene: SKScene, ObservableObject {
         let xScrollOffset = apparentSpaceshipXVelocity * bgScrollSpeed
         for background in backgroundNodes {
             var newX = background.position.x + xScrollOffset
-            if newX < xCameraPosition - backgroundWidth / 2 - centerX {
+            if newX < centerX - backgroundWidth / 2 - centerX {
                 newX += backgroundWidth * 2
-            } else if newX > xCameraPosition + backgroundWidth / 2 + centerX {
+            } else if newX > centerX + backgroundWidth / 2 + centerX {
                 newX -= backgroundWidth * 2
             }
             background.position = CGPoint(x: newX, y: yBackgroundPosition)
