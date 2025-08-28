@@ -7,9 +7,10 @@
 
 import SpriteKit
 import Combine
+import WatchKit
 
 let maxSpaceshipSpeedX: CGFloat = 200.0
-let zSpeedDefault: CGFloat = 30.0 / 100.0
+let zSpeedDefault: CGFloat = 90.0 / 100.0
 let zSpeedUpperLimit = zSpeedDefault * 5.0
 let zSpeedLowerLimit = zSpeedDefault / 10.0
 let bgScrollSpeed: CGFloat = 0.2 / 60.0
@@ -126,7 +127,7 @@ class GameScene: SKScene, ObservableObject {
         // bow: y = a(x - h)^2 + k
         let a = bowDepth / pow(size.width * 0.4, 2) // Parabola coefficient
         let h = centerX
-        let k = centerY
+        let k = centerY - 50
         let newY = -20 + a * pow(newX - h, 2) + k
         spaceship.position = CGPoint(x: newX, y: newY)
         spaceshipXForce = 0.0 // Reset forces
@@ -193,6 +194,10 @@ class GameScene: SKScene, ObservableObject {
                         } else {
                             print("Star collision detected, changing to lovey_face")
                             body.changeFace(to: "lovey_face")
+                            // Play light haptic feedback
+                            WKInterfaceDevice.current().play(.click)
+//                            let soundAction = SKAction.playSoundFileNamed("collisionSound.caf", waitForCompletion: false)
+//                            run(soundAction)
                         }
                     }
 
