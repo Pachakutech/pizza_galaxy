@@ -15,7 +15,7 @@ let zSpeedLowerLimit = zSpeedDefault / 10.0
 let bgScrollSpeed: CGFloat = 0.2 / 60.0
 let celestialScrollSpeed: CGFloat = 1.0 / 60.0
 let maxJetForce: CGFloat = 2000.0
-let xDamping: CGFloat = 0.995
+let xDamping: CGFloat = 0.95
 let blackHoleEjectionForceMagnitude: CGFloat = 1.0
 let zConversionFactor: CGFloat = 100000.0
 let gravitationalConstant: CGFloat = 10
@@ -109,7 +109,9 @@ class GameScene: SKScene, ObservableObject {
 
     override func update(_ currentTime: TimeInterval) {
         frameCount += 1
-
+        
+        let centerY = size.height / 2
+        let centerX = size.width / 2
         let zAccBase = zAccDelta
         zAccDelta = 0.0
         if zAccBase != 0.0 {
@@ -117,9 +119,9 @@ class GameScene: SKScene, ObservableObject {
         }
 
         // Update spaceship position and velocity
-        apparentSpaceshipXVelocity = apparentSpaceshipXVelocity * xDamping + spaceshipXForce
+        apparentSpaceshipXVelocity = apparentSpaceshipXVelocity * xDamping + spaceshipXForce + spaceship.position.x - centerX// not crown delta, spaceship position to center!
         apparentSpaceshipXVelocity = max(min(apparentSpaceshipXVelocity, maxSpaceshipSpeedX), -maxSpaceshipSpeedX)
-        let newX = min(size.width * 0.9, max(spaceship.position.x + CGFloat(crownDelta), size.width * 0.1))
+        let newX = min(size.width * 0.9, max(spaceship.position.x + CGFloat(crownDelta), size.width * 0.1)) // here is the right place for crown delta to become spaceship position
         // bow: y = a(x - h)^2 + k
         let a = bowDepth / pow(size.width * 0.4, 2) // Parabola coefficient
         let h = size.width / 2
@@ -130,9 +132,6 @@ class GameScene: SKScene, ObservableObject {
         spaceshipPosition = spaceship.position
         let xCelestialOffset = -apparentSpaceshipXVelocity * celestialScrollSpeed
         crownDelta = 0 // Reset crownDelta
-        
-        let centerX = size.width / 2
-        let centerY = size.height / 2
         
         // Update camera
         if let camera = camera {
@@ -178,7 +177,7 @@ class GameScene: SKScene, ObservableObject {
             if body.zDepth <= 0 {
                 bodiesToReset.append(body)
             } else {
-                body.updatePositionAndScale(spaceshipX: centerX, spaceshipY: centerY, verticalOffset: verticalOffset, xOffset: xCelestialOffset)
+                body.updatePositionAndScale(centerX: centerX, spaceshipY: centerY, verticalOffset: verticalOffset, xOffset: xCelestialOffset)
 
                 let distance = spaceship.position.distance(to: body.position)
                 body.zSpeed = max(zSpeedLowerLimit, min(zSpeedUpperLimit, body.zSpeed + zAccBase))
@@ -348,7 +347,7 @@ class GameScene: SKScene, ObservableObject {
         let forceX = cos(forceAngle) * forceMagnitude
         let forceZ = sin(forceAngle) * forceMagnitude
         zAccDelta += CGFloat(forceZ / zConversionFactor)
-        spaceshipXForce += forceX * 0.05
+        spaceshipXForce += forceX * 0.5
         print("Applied force: forceAngle \(forceAngle * 180 / .pi)°, forceX: \(forceX), forceZ: \(forceZ)")
     }
 }
