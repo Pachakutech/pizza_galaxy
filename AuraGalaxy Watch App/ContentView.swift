@@ -34,7 +34,7 @@ struct ContentView: View {
             $crownValue,
             from: -100.0,
             through: 100.0,
-            sensitivity: .high,
+            sensitivity: .medium,
             isContinuous: true
         )
         .gesture(
