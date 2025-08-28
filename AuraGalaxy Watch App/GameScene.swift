@@ -120,7 +120,8 @@ class GameScene: SKScene, ObservableObject {
         }
 
         // Update spaceship position and velocity
-        apparentSpaceshipXVelocity = apparentSpaceshipXVelocity * xDamping + spaceshipXForce + (spaceship.position.x - centerX) / 4
+        let xDelta = spaceship.position.x - centerX
+        apparentSpaceshipXVelocity = apparentSpaceshipXVelocity * xDamping + spaceshipXForce + xDelta / 4
         apparentSpaceshipXVelocity = min(max(-maxSpaceshipSpeedX, apparentSpaceshipXVelocity), maxSpaceshipSpeedX)
         let newX = min(max(size.width * 0.1, spaceship.position.x + CGFloat(crownDelta)), size.width * 0.9)
 //        let newX = min(size.width * 0.9, max(spaceship.position.x + CGFloat(crownDelta), size.width * 0.1))
@@ -130,6 +131,7 @@ class GameScene: SKScene, ObservableObject {
         let k = centerY - 50
         let newY = -20 + a * pow(newX - h, 2) + k
         spaceship.position = CGPoint(x: newX, y: newY)
+        spaceship.zRotation = CGFloat(xDelta/128)
         spaceshipXForce = 0.0 // Reset forces
         spaceshipPosition = spaceship.position
         let xCelestialOffset = -apparentSpaceshipXVelocity * celestialScrollSpeed
