@@ -110,8 +110,8 @@ class GameScene: SKScene, ObservableObject {
     override func update(_ currentTime: TimeInterval) {
         frameCount += 1
         
-        let centerY = size.height / 2
         let centerX = size.width / 2
+        let centerY = size.height / 2
         let zAccBase = zAccDelta
         zAccDelta = 0.0
         if zAccBase != 0.0 {
@@ -119,13 +119,14 @@ class GameScene: SKScene, ObservableObject {
         }
 
         // Update spaceship position and velocity
-        apparentSpaceshipXVelocity = apparentSpaceshipXVelocity * xDamping + spaceshipXForce + spaceship.position.x - centerX// not crown delta, spaceship position to center!
+        apparentSpaceshipXVelocity = apparentSpaceshipXVelocity * xDamping + spaceshipXForce + (spaceship.position.x - centerX)  // not crown delta, spaceship position to center!
         apparentSpaceshipXVelocity = max(min(apparentSpaceshipXVelocity, maxSpaceshipSpeedX), -maxSpaceshipSpeedX)
-        let newX = min(size.width * 0.9, max(spaceship.position.x + CGFloat(crownDelta), size.width * 0.1)) // here is the right place for crown delta to become spaceship position
+        let newX = min(max(size.width * 0.1, spaceship.position.x + CGFloat(crownDelta)), size.width * 0.9)
+//        let newX = min(size.width * 0.9, max(spaceship.position.x + CGFloat(crownDelta), size.width * 0.1))
         // bow: y = a(x - h)^2 + k
         let a = bowDepth / pow(size.width * 0.4, 2) // Parabola coefficient
-        let h = size.width / 2
-        let k = size.height / 2
+        let h = centerX
+        let k = centerY
         let newY = -20 + a * pow(newX - h, 2) + k
         spaceship.position = CGPoint(x: newX, y: newY)
         spaceshipXForce = 0.0 // Reset forces
