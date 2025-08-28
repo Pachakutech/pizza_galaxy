@@ -119,8 +119,8 @@ class GameScene: SKScene, ObservableObject {
         }
 
         // Update spaceship position and velocity
-        apparentSpaceshipXVelocity = apparentSpaceshipXVelocity * xDamping + spaceshipXForce + (spaceship.position.x - centerX)  // not crown delta, spaceship position to center!
-        apparentSpaceshipXVelocity = max(min(apparentSpaceshipXVelocity, maxSpaceshipSpeedX), -maxSpaceshipSpeedX)
+        apparentSpaceshipXVelocity = apparentSpaceshipXVelocity * xDamping + spaceshipXForce + (spaceship.position.x - centerX) / 4
+        apparentSpaceshipXVelocity = min(max(-maxSpaceshipSpeedX, apparentSpaceshipXVelocity), maxSpaceshipSpeedX)
         let newX = min(max(size.width * 0.1, spaceship.position.x + CGFloat(crownDelta)), size.width * 0.9)
 //        let newX = min(size.width * 0.9, max(spaceship.position.x + CGFloat(crownDelta), size.width * 0.1))
         // bow: y = a(x - h)^2 + k
@@ -348,7 +348,7 @@ class GameScene: SKScene, ObservableObject {
         let forceX = cos(forceAngle) * forceMagnitude
         let forceZ = sin(forceAngle) * forceMagnitude
         zAccDelta += CGFloat(forceZ / zConversionFactor)
-        spaceshipXForce += forceX * 0.5
+        spaceshipXForce += forceX * 0.7
         print("Applied force: forceAngle \(forceAngle * 180 / .pi)°, forceX: \(forceX), forceZ: \(forceZ)")
     }
 }
