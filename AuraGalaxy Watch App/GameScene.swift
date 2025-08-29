@@ -18,7 +18,7 @@ let celestialScrollSpeed: CGFloat = 1.0 / 60.0
 let maxJetForce: CGFloat = 2000.0
 let xDamping: CGFloat = 0.95
 let blackHoleEjectionForceMagnitude: CGFloat = 1.0
-let zConversionFactor: CGFloat = 100000.0
+let zConversionFactor: CGFloat = 1000.0
 let gravitationalConstant: CGFloat = 10
 let verticalOffsetSigma: CGFloat = 0.4
 let verticalOffsetDefault: CGFloat = 25.0
@@ -104,8 +104,7 @@ class GameScene: SKScene, ObservableObject {
     }
 
     func updateCrownDelta(_ delta: Double) {
-        crownDelta = max(min(delta, Double(crownDeltaMax)), -Double(crownDeltaMax)) // Clamp delta
-        print("Crown delta updated: \(crownDelta)")
+        crownDelta = min(max(-Double(crownDeltaMax), delta), Double(crownDeltaMax)) // Clamp delta
     }
 
     override func update(_ currentTime: TimeInterval) {
@@ -118,18 +117,19 @@ class GameScene: SKScene, ObservableObject {
         if zAccBase != 0.0 {
             print("Set zAccBase to \(zAccBase) from accDelta \(zAccDelta) when zSpeedAvg \(zSpeedAvg)")
         }
+        zSpeedAvg = (7 * zSpeedAvg + zSpeedDefault)/8
 
         // Update spaceship position and velocity
         let xDelta = spaceship.position.x - centerX
         apparentSpaceshipXVelocity = apparentSpaceshipXVelocity * xDamping + spaceshipXForce + xDelta / 4
         apparentSpaceshipXVelocity = min(max(-maxSpaceshipSpeedX, apparentSpaceshipXVelocity), maxSpaceshipSpeedX)
         let newX = min(max(size.width * 0.1, spaceship.position.x + CGFloat(crownDelta)), size.width * 0.9)
-//        let newX = min(size.width * 0.9, max(spaceship.position.x + CGFloat(crownDelta), size.width * 0.1))
-        // bow: y = a(x - h)^2 + k
+        // bow: y = a(x - h)^2 + baseline
         let a = bowDepth / pow(size.width * 0.4, 2) // Parabola coefficient
         let h = centerX
-        let k = centerY - 50
-        let newY = -20 + a * pow(newX - h, 2) + k
+        let baseline = centerY - 70
+        let parabola: CGFloat = a * pow(newX - h, 2)
+        let newY = parabola + baseline
         spaceship.position = CGPoint(x: newX, y: newY)
         spaceship.zRotation = CGFloat(xDelta/128)
         spaceshipXForce = 0.0 // Reset forces
@@ -137,13 +137,16 @@ class GameScene: SKScene, ObservableObject {
         let xCelestialOffset = -apparentSpaceshipXVelocity * celestialScrollSpeed
         crownDelta = 0 // Reset crownDelta
         
+        verticalOffset -= parabola / 8 - 0.9 // light upward trend
+        print("vertical offset: \(verticalOffset)")
+        
         // Update camera
         if let camera = camera {
             camera.position.y = centerY
             camera.position.x = centerX
         }
 
-        // Handle crown input (y-axis for celestial bodies)
+        // Thruster animations
         if crownDelta != 0 {
             lastCrownInputTime = currentTime
             spaceship.applyThrust(crownDelta: crownDelta)
@@ -160,7 +163,7 @@ class GameScene: SKScene, ObservableObject {
         let yBaseSpeed: CGFloat = yMaxOffset / (60 * 10)
         let ySpeedFactor = yBaseSpeed * (verticalOffset / yMaxOffset)
         yBackgroundOffset += ySpeedFactor
-        yBackgroundOffset = min(max(yBackgroundOffset, -yMaxOffset), yMaxOffset)
+        yBackgroundOffset = min(max(-yMaxOffset, yBackgroundOffset), yMaxOffset)
         let yBackgroundPosition = centerY - yBackgroundOffset
         let xScrollOffset = apparentSpaceshipXVelocity * bgScrollSpeed
         for background in backgroundNodes {
@@ -172,7 +175,7 @@ class GameScene: SKScene, ObservableObject {
             }
             background.position = CGPoint(x: newX, y: yBackgroundPosition)
         }
-        print("Background y=\(yBackgroundPosition), verticalOffset=\(verticalOffset), yBackgroundOffset=\(yBackgroundOffset), ySpeedFactor=\(ySpeedFactor)")
+//        print("Background y=\(yBackgroundPosition), verticalOffset=\(verticalOffset), yBackgroundOffset=\(yBackgroundOffset), ySpeedFactor=\(ySpeedFactor)")
 
         // Update celestial bodies
         var bodiesToReset: [CelestialBody] = []
@@ -247,7 +250,7 @@ class GameScene: SKScene, ObservableObject {
             } else {
                 activeStars.append(newBody as! Star)
             }
-            print("Spawned \(isBlackHole ? "BlackHole" : "Star") at angle: \(newBody.direction * 180 / .pi)°, distance: \(newBody.radialMagnitude)")
+//            print("Spawned \(isBlackHole ? "BlackHole" : "Star") at angle: \(newBody.direction * 180 / .pi)°, distance: \(newBody.radialMagnitude)")
         }
 
         if isAnimatingOrbit {
@@ -289,12 +292,14 @@ class GameScene: SKScene, ObservableObject {
 
         for body in activeBlackHoles {
             if body !== blackHole {
+                body.speed = 0.0
                 body.run(repeatOrbit)
                 print("Started orbit animation for BlackHole at position: \(body.position)")
             }
         }
 
         for body in activeStars {
+            body.speed = 0.0
             body.run(repeatOrbit)
             body.changeFace(to: "silly_face")
             print("Started orbit animation for Star at position: \(body.position)")
@@ -312,6 +317,7 @@ class GameScene: SKScene, ObservableObject {
             self.activeBlackHoles.removeAll()
             self.activeStars.removeAll()
             self.placidFrameCount = self.placidPeriodFrames
+            self.zAccDelta = 9.0
             self.animatingBlackHole = nil
         }
         run(SKAction.sequence([wait, endAnimation]))
@@ -322,7 +328,9 @@ class GameScene: SKScene, ObservableObject {
         let distance = body.position.distance(to: body.position)
         let denominator = max(distance * distance, 1.0)
         let gravForceMagnitude = (gravitationalConstant * body.mass) / denominator
-        print("Applying gravitational force of \(gravForceMagnitude) at forceAngle \(direction * 180 / .pi)°")
+//        print("Applying gravitational force of \(gravForceMagnitude) at forceAngle \(direction * 180 / .pi)°")
+        // applying grav force
+        print("Applying grav force for body $\(body.zDepth)$")
         applyForceToSpaceship(forceAngle: direction, forceMagnitude: gravForceMagnitude)
     }
 
@@ -339,15 +347,17 @@ class GameScene: SKScene, ObservableObject {
         let forceScale = 1.0 - 0.75 * t
         let forceAngle = blackHole.zRotation - (isTop ? 0 : .pi) + .pi / 2
         let forceMagnitude = (baseForce * forceScale * 0.25) / max(1.0, body.zDepth)
+        // applying jet force
         applyForceToSpaceship(forceAngle: forceAngle, forceMagnitude: forceMagnitude)
-        print("Jet hit box collision: distanceToBlackHole=\(distanceToBlackHole), zDepth=\(body.zDepth), forceMagnitude=\(forceMagnitude), forceAngle=\(forceAngle * 180 / .pi)°, t=\(t), forceScale=\(forceScale)")
+//        print("Jet hit box collision: distanceToBlackHole=\(distanceToBlackHole), zDepth=\(body.zDepth), forceMagnitude=\(forceMagnitude), forceAngle=\(forceAngle * 180 / .pi)°, t=\(t), forceScale=\(forceScale)")
     }
 
     private func applyEndForce(to blackHole: BlackHole) {
         let jetAngle = blackHole.zRotation
         let isAbove = spaceship.position.y > blackHole.position.y
         let forceAngle = isAbove ? jetAngle + .pi : jetAngle
-        print("Applying end force at forceAngle \(forceAngle * 180 / .pi)° magnitude \(blackHoleEjectionForceMagnitude)")
+        print("Applying end force")
+        //        print("Applying end force at forceAngle \(forceAngle * 180 / .pi)° magnitude \(blackHoleEjectionForceMagnitude)")
         applyForceToSpaceship(forceAngle: forceAngle, forceMagnitude: blackHoleEjectionForceMagnitude)
     }
 
@@ -355,7 +365,8 @@ class GameScene: SKScene, ObservableObject {
         let forceX = cos(forceAngle) * forceMagnitude
         let forceZ = sin(forceAngle) * forceMagnitude
         zAccDelta += CGFloat(forceZ / zConversionFactor)
+        print("setting zAccDelta with forceZ: \(forceZ), to: \(zAccDelta)")
         spaceshipXForce += forceX * 0.7
-        print("Applied force: forceAngle \(forceAngle * 180 / .pi)°, forceX: \(forceX), forceZ: \(forceZ)")
+//        print("Applied force: forceAngle \(forceAngle * 180 / .pi)°, forceX: \(forceX), forceZ: \(forceZ)")
     }
 }

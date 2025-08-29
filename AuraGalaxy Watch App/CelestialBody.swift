@@ -54,7 +54,7 @@ class CelestialBody: SKSpriteNode, ZDepthBody {
             y: spaceshipY + sin(direction) * radialFactor - verticalOffset
         )
         zPosition = 20 - zDepth / 20 // zDepth 0 -> zPosition 20, zDepth 100 -> zPosition 0
-        print("Updated \(texture?.description ?? "unknown"): zDepth=\(zDepth), zPosition=\(zPosition), radialFactor=\(radialFactor), pos=\(position), xOffset=\(xOffset), xCumulativeOffset=\(xCumulativeOffset)")
+//        print("Updated \(texture?.description ?? "unknown"): zDepth=\(zDepth), zPosition=\(zPosition), radialFactor=\(radialFactor), pos=\(position), xOffset=\(xOffset), xCumulativeOffset=\(xCumulativeOffset)")
     }
 
     func reset(xOffset: CGFloat, yOffset: CGFloat, verticalOffset: CGFloat, zNewSpeed: CGFloat) {
