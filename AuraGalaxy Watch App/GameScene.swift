@@ -8,6 +8,7 @@
 import SpriteKit
 import Combine
 import WatchKit
+import AVFoundation
 
 let maxSpaceshipSpeedX: CGFloat = 200.0
 let zSpeedDefault: CGFloat = 90.0 / 100.0
@@ -49,14 +50,17 @@ class GameScene: SKScene, ObservableObject {
     private let maxCelestialBodies = 34
     private let blackHoleProbability = 0.2
     private let placidPeriodFrames = 60
+    private var collisionSoundAction: SKAction? // Preloaded sound action
 
     override init(size: CGSize) {
         super.init(size: size)
+        setupAudioSession()
         setupScene()
     }
 
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
+        setupAudioSession()
         setupScene()
     }
 
@@ -99,6 +103,21 @@ class GameScene: SKScene, ObservableObject {
         print("Initial setup: spaceship position: \(spaceship.position), xVelocity: \(apparentSpaceshipXVelocity)")
     }
 
+    private func setupAudioSession() {
+        print("setting up audio session")
+        do {
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
+            try session.setActive(true)
+            print("Audio session configured for playback")
+        } catch {
+            print("Failed to set up audio session: \(error.localizedDescription)")
+        }
+        let soundAction = SKAction.playSoundFileNamed("collisionSound.caf", waitForCompletion: false)
+        collisionSoundAction = soundAction
+        print("Collision sound preloaded")
+    }
+    
     func handleTap(at location: CGPoint) {
         print("Tap at \(location), no action defined")
     }
@@ -201,9 +220,12 @@ class GameScene: SKScene, ObservableObject {
                             print("Star collision detected, changing to lovey_face")
                             body.changeFace(to: "lovey_face")
                             // Play light haptic feedback
-                            WKInterfaceDevice.current().play(.click)
-                            let soundAction = SKAction.playSoundFileNamed("collisionSound.caf", waitForCompletion: false)
-                            run(soundAction)
+//                            WKInterfaceDevice.current().play(.click)
+                            if let soundAction = collisionSoundAction {
+                              run(soundAction)
+                            } else {
+                              print("Collision sound action not available")
+                            }
                         }
                     }
 
