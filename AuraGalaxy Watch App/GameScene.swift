@@ -185,7 +185,7 @@ class GameScene: SKScene, ObservableObject {
             if body.zDepth <= 0 {
                 bodiesToReset.append(body)
             } else {
-                body.updatePositionAndScale(centerX: centerX, centerY: centerY, verticalOffset: verticalOffset, xOffset: xCelestialOffset)
+                body.updatePositionAndScale(centerX: centerX, centerY: centerY, verticalOffset: 0, xOffset: xCelestialOffset)
 
                 let distance = spaceship.position.distance(to: body.position)
                 body.zSpeed = max(zSpeedLowerLimit, min(zSpeedUpperLimit, body.zSpeed + zAccBase))

@@ -53,7 +53,7 @@ class CelestialBody: SKSpriteNode, ZDepthBody {
             x: centerX + cos(direction) * radialFactor - xInitialOffset - xCumulativeOffset,
             y: centerY + sin(direction) * radialFactor - yInitialOffset - verticalOffset
         )
-        zPosition = 20 - zDepth / 20 // zDepth 0 -> zPosition 20, zDepth 100 -> zPosition 0
+        zPosition = 20 - zDepth / 20 // zDepth 0 -> zPosition 20, zDepth 100 -> zPosition 0 INCORRECT
 //        print("Updated \(texture?.description ?? "unknown"): zDepth=\(zDepth), zPosition=\(zPosition), radialFactor=\(radialFactor), pos=\(position), xOffset=\(xOffset), xCumulativeOffset=\(xCumulativeOffset)")
     }
 
