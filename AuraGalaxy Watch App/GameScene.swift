@@ -137,7 +137,7 @@ class GameScene: SKScene, ObservableObject {
         let xCelestialOffset = -apparentSpaceshipXVelocity * celestialScrollSpeed
         crownDelta = 0 // Reset crownDelta
         
-        verticalOffset -= parabola / 8 - 0.9 // light upward trend
+        verticalOffset -= parabola / 8 - 0.1 // light upward trend
         verticalOffset = min(max(-size.height/2, verticalOffset), size.height/2)
         print("vertical offset: \(verticalOffset)")
         
@@ -240,7 +240,7 @@ class GameScene: SKScene, ObservableObject {
             } else {
                 newBody = isBlackHole ? BlackHole() : Star()
             }
-            newBody.reset(xOffset: apparentSpaceshipXVelocity, yOffset: 0.0, verticalOffset: verticalOffset, zNewSpeed: zSpeedAvg)
+            newBody.reset(xOffset: apparentSpaceshipXVelocity/2, yOffset: 0.0, zNewSpeed: zSpeedAvg)
             newBody.zPosition = -1
             if newBody.parent == nil {
                 addChild(newBody)

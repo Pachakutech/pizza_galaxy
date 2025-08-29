@@ -89,12 +89,12 @@ class BlackHole: CelestialBody {
         }
     }
 
-    override func reset(xOffset: CGFloat, yOffset: CGFloat, verticalOffset: CGFloat, zNewSpeed: CGFloat) {
+    override func reset(xOffset: CGFloat, yOffset: CGFloat, zNewSpeed: CGFloat) {
         jetEmitters.forEach { $0.removeFromParent() }
         jetEmitters.removeAll()
         jetHitBoxes.forEach { $0.removeFromParent() }
         jetHitBoxes.removeAll()
-        super.reset(xOffset: xOffset, yOffset: yOffset, verticalOffset: verticalOffset, zNewSpeed: zNewSpeed)
+        super.reset(xOffset: xOffset, yOffset: yOffset, zNewSpeed: zNewSpeed)
         setupJetEffects()
     }
 }

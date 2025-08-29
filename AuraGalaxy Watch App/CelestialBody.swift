@@ -51,13 +51,13 @@ class CelestialBody: SKSpriteNode, ZDepthBody {
         let radialFactor = (100 - zDepth) / 100 * radialMagnitude
         position = CGPoint(
             x: centerX + cos(direction) * radialFactor - xInitialOffset - xCumulativeOffset,
-            y: centerY + sin(direction) * radialFactor - verticalOffset
+            y: centerY + sin(direction) * radialFactor - yInitialOffset - verticalOffset
         )
         zPosition = 20 - zDepth / 20 // zDepth 0 -> zPosition 20, zDepth 100 -> zPosition 0
 //        print("Updated \(texture?.description ?? "unknown"): zDepth=\(zDepth), zPosition=\(zPosition), radialFactor=\(radialFactor), pos=\(position), xOffset=\(xOffset), xCumulativeOffset=\(xCumulativeOffset)")
     }
 
-    func reset(xOffset: CGFloat, yOffset: CGFloat, verticalOffset: CGFloat, zNewSpeed: CGFloat) {
+    func reset(xOffset: CGFloat, yOffset: CGFloat, zNewSpeed: CGFloat) {
         let radian = generateBiasedRadian(sigma: 6)
         let radialOffset = CGFloat.random(in: 5...20)
         direction = (radian + .pi/2) * (Bool.random() ? 1 : -1)

@@ -20,8 +20,8 @@ class Star: CelestialBody {
         fatalError("init(coder:) has not been implemented")
     }
 
-    override func reset(xOffset: CGFloat, yOffset: CGFloat, verticalOffset: CGFloat, zNewSpeed: CGFloat) {
-        super.reset(xOffset: xOffset, yOffset: yOffset, verticalOffset: verticalOffset, zNewSpeed: zNewSpeed)
+    override func reset(xOffset: CGFloat, yOffset: CGFloat, zNewSpeed: CGFloat) {
+        super.reset(xOffset: xOffset, yOffset: yOffset, zNewSpeed: zNewSpeed)
         changeFace(to: "frowny_face")
         // Reapply debug border
         color = .red
