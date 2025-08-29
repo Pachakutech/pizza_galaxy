@@ -17,7 +17,7 @@ let bgScrollSpeed: CGFloat = 0.2 / 60.0
 let celestialScrollSpeed: CGFloat = 1.0 / 60.0
 let maxJetForce: CGFloat = 2000.0
 let xDamping: CGFloat = 0.95
-let blackHoleEjectionForceMagnitude: CGFloat = 1.0
+let blackHoleEjectionForceMagnitude: CGFloat = 1000.0
 let zConversionFactor: CGFloat = 1000.0
 let gravitationalConstant: CGFloat = 10
 let verticalOffsetSigma: CGFloat = 0.4
@@ -301,7 +301,7 @@ class GameScene: SKScene, ObservableObject {
             print("Started orbit animation for Star at position: \(body.position)")
         }
 
-        applyEndForce(to: blackHole)
+        applyEndForce(to: blackHole) // even moving this in the end animation isn't running the end force (though it is being logged)
         
         // Futures
         let wait = SKAction.wait(forDuration: 3.0)
@@ -328,12 +328,10 @@ class GameScene: SKScene, ObservableObject {
         let gravForceMagnitude = (gravitationalConstant * body.mass) / denominator
 //        print("Applying gravitational force of \(gravForceMagnitude) at forceAngle \(direction * 180 / .pi)°")
         // applying grav force
-        print("Applying grav force for body $\(body.zDepth)$")
         applyForceToSpaceship(forceAngle: direction, forceMagnitude: gravForceMagnitude)
     }
 
     func applyJetForce(_ blackHole: BlackHole, _ body: CelestialBody, _ hitBox: SKSpriteNode, _ isTop: Bool) {
-        print("Applying jet force for Jet hit box")
         let distanceToBlackHole = spaceship.position.distance(to: blackHole.position)
         let baseForce = maxJetForce * (1.0 - body.zDepth / 100.0)
         let hitBoxLocalSpaceshipPos = blackHole.convert(spaceship.position, from: self)
@@ -354,7 +352,6 @@ class GameScene: SKScene, ObservableObject {
         let jetAngle = blackHole.zRotation
         let isAbove = spaceship.position.y > blackHole.position.y
         let forceAngle = isAbove ? jetAngle + .pi : jetAngle
-        print("Applying end force")
         //        print("Applying end force at forceAngle \(forceAngle * 180 / .pi)° magnitude \(blackHoleEjectionForceMagnitude)")
         applyForceToSpaceship(forceAngle: forceAngle, forceMagnitude: blackHoleEjectionForceMagnitude)
     }
