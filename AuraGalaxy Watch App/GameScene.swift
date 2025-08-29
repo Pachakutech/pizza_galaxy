@@ -320,7 +320,7 @@ class GameScene: SKScene, ObservableObject {
         for body in activeStars {
             body.speed = 0.0
             body.run(repeatOrbit)
-            body.changeFace(to: "silly_face")
+            body.changeFace(to: "worried_face")
             print("Started orbit animation for Star at position: \(body.position)")
         }
 
@@ -355,7 +355,6 @@ class GameScene: SKScene, ObservableObject {
     }
 
     func applyJetForce(_ blackHole: BlackHole, _ body: CelestialBody, _ hitBox: SKSpriteNode, _ isTop: Bool) {
-        let distanceToBlackHole = spaceship.position.distance(to: blackHole.position)
         let baseForce = maxJetForce * (1.0 - body.zDepth / 100.0)
         let hitBoxLocalSpaceshipPos = blackHole.convert(spaceship.position, from: self)
         let hitBoxLength = hitBox.size.height
