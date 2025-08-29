@@ -44,14 +44,14 @@ class CelestialBody: SKSpriteNode, ZDepthBody {
         texture = SKTexture(imageNamed: textureName)
     }
 
-    func updatePositionAndScale(centerX: CGFloat, spaceshipY: CGFloat, verticalOffset: CGFloat, xOffset: CGFloat) {
+    func updatePositionAndScale(centerX: CGFloat, centerY: CGFloat, verticalOffset: CGFloat, xOffset: CGFloat) {
         xCumulativeOffset += xOffset
         let scale = 0.1 + (1 - zDepth / 100) * 0.9
         setScale(scale)
         let radialFactor = (100 - zDepth) / 100 * radialMagnitude
         position = CGPoint(
             x: centerX + cos(direction) * radialFactor - xInitialOffset - xCumulativeOffset,
-            y: spaceshipY + sin(direction) * radialFactor - verticalOffset
+            y: centerY + sin(direction) * radialFactor - verticalOffset
         )
         zPosition = 20 - zDepth / 20 // zDepth 0 -> zPosition 20, zDepth 100 -> zPosition 0
 //        print("Updated \(texture?.description ?? "unknown"): zDepth=\(zDepth), zPosition=\(zPosition), radialFactor=\(radialFactor), pos=\(position), xOffset=\(xOffset), xCumulativeOffset=\(xCumulativeOffset)")
