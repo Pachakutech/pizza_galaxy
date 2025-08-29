@@ -202,8 +202,8 @@ class GameScene: SKScene, ObservableObject {
                             body.changeFace(to: "lovey_face")
                             // Play light haptic feedback
                             WKInterfaceDevice.current().play(.click)
-//                            let soundAction = SKAction.playSoundFileNamed("collisionSound.caf", waitForCompletion: false)
-//                            run(soundAction)
+                            let soundAction = SKAction.playSoundFileNamed("collisionSound.caf", waitForCompletion: false)
+                            run(soundAction)
                         }
                     }
 
