@@ -14,9 +14,9 @@ class Spaceship: SKSpriteNode {
     private let thrustStrength: CGFloat = 150.0
 
     init() {
-        let texture = SKTexture(imageNamed: "spaceship_placeholder")
+        let texture = SKTexture(imageNamed: "spaceship")
         guard texture.size() != .zero else {
-            fatalError("Error: Spaceship texture 'spaceship_placeholder' is missing or invalid")
+            fatalError("Error: Spaceship texture 'spaceship' is missing or invalid")
         }
         super.init(texture: texture, color: .clear, size: CGSize(width: 30, height: 30))
         
