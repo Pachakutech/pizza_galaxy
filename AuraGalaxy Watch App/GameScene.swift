@@ -138,6 +138,7 @@ class GameScene: SKScene, ObservableObject {
         crownDelta = 0 // Reset crownDelta
         
         verticalOffset -= parabola / 8 - 0.9 // light upward trend
+        verticalOffset = min(max(-size.height/2, verticalOffset), size.height/2)
         print("vertical offset: \(verticalOffset)")
         
         // Update camera
