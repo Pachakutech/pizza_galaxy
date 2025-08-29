@@ -282,8 +282,6 @@ class GameScene: SKScene, ObservableObject {
     private func startOrbitAnimation(for blackHole: BlackHole) {
         isAnimatingOrbit = true
         animatingBlackHole = blackHole
-        zAccDelta = 0
-        verticalOffset = verticalOffsetDefault
 
         let radius: CGFloat = 20.0
         let orbitPath = UIBezierPath(arcCenter: spaceship.position, radius: radius, startAngle: 0, endAngle: .pi * 2, clockwise: true)
@@ -291,11 +289,9 @@ class GameScene: SKScene, ObservableObject {
         let repeatOrbit = SKAction.repeat(orbitAction, count: 2)
 
         for body in activeBlackHoles {
-            if body !== blackHole {
                 body.speed = 0.0
                 body.run(repeatOrbit)
                 print("Started orbit animation for BlackHole at position: \(body.position)")
-            }
         }
 
         for body in activeStars {
@@ -306,6 +302,8 @@ class GameScene: SKScene, ObservableObject {
         }
 
         applyEndForce(to: blackHole)
+        
+        // Futures
         let wait = SKAction.wait(forDuration: 3.0)
         let endAnimation = SKAction.run { [weak self] in
             guard let self = self else { return }
