@@ -46,10 +46,10 @@ class BlackHole: CelestialBody {
         topHitBox.position = CGPoint(x: 0, y: size.height / 2 + hitBoxLength / 2) // Center extends outward
         topHitBox.zPosition = 1
         // Debug outline
-//        topHitBox.run(SKAction.repeatForever(SKAction.sequence([
-//            SKAction.colorize(with: .red, colorBlendFactor: 0.5, duration: 0.5),
-//            SKAction.colorize(with: .clear, colorBlendFactor: 0.0, duration: 0.5)
-//        ])))
+        topHitBox.run(SKAction.repeatForever(SKAction.sequence([
+            SKAction.colorize(with: zDepth < 30 ? .red : .green, colorBlendFactor: 0.5, duration: 0.5),
+            SKAction.colorize(with: .clear, colorBlendFactor: 0.0, duration: 0.5)
+        ])))
         addChild(topHitBox)
         jetHitBoxes.append(topHitBox)
 
@@ -68,10 +68,10 @@ class BlackHole: CelestialBody {
         bottomHitBox.position = CGPoint(x: 0, y: -size.height / 2 - hitBoxLength / 2) // Center extends outward
         bottomHitBox.zPosition = 1
         // Debug outline
-//        bottomHitBox.run(SKAction.repeatForever(SKAction.sequence([
-//            SKAction.colorize(with: .red, colorBlendFactor: 0.5, duration: 0.5),
-//            SKAction.colorize(with: .clear, colorBlendFactor: 0.0, duration: 0.5)
-//        ])))
+        bottomHitBox.run(SKAction.repeatForever(SKAction.sequence([
+            SKAction.colorize(with: zDepth < 90 ? .red : .green, colorBlendFactor: 0.5, duration: 0.5),
+            SKAction.colorize(with: .clear, colorBlendFactor: 0.0, duration: 0.5)
+        ])))
         addChild(bottomHitBox)
         jetHitBoxes.append(bottomHitBox)
     }

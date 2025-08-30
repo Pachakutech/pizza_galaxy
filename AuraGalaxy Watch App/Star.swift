@@ -10,7 +10,7 @@ import SpriteKit
 @MainActor
 class Star: CelestialBody {
     init() {
-        super.init(textureName: "frowny_face", size: CGSize(width: 30, height: 30), mass: 0.01)
+        super.init(textureName: "frowny_face", size: CGSize(width: 30, height: 30), mass: 0.001)
         // Temporary debug border
         color = .red
         colorBlendFactor = 0.1 // Remove after testing
