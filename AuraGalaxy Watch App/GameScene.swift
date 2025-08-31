@@ -20,7 +20,7 @@ let maxJetForce: CGFloat = 2000.0
 let xDamping: CGFloat = 0.95
 let blackHoleEjectionForceMagnitude: CGFloat = 200.0
 let zConversionFactor: CGFloat = 1000.0
-let gravitationalConstant: CGFloat = 10
+let gravitationalConstant: CGFloat = 1
 let verticalOffsetSigma: CGFloat = 0.4
 let verticalOffsetDefault: CGFloat = 25.0
 let bowDepth: CGFloat = 20.0 // Depth of downward bow at screen edges
@@ -46,8 +46,8 @@ class GameScene: SKScene, ObservableObject {
     private var spawnIntervalFrames = 15
     private var zAccDelta: CGFloat = 0.0
     private var zSpeedAvg: CGFloat = zSpeedDefault
-    private var xApparentSpaceshipVelocity: CGFloat = 0.0
-    private var spaceshipXForce: CGFloat = 0.0
+    private var xApparentVelocity: CGFloat = 0.0
+    private var xAccDelta: CGFloat = 0.0
     private let maxCelestialBodies = 34
     private let blackHoleProbability = 0.2
     private let placidPeriodFrames = 60
@@ -101,7 +101,7 @@ class GameScene: SKScene, ObservableObject {
             inactiveCelestialBodies.append(body)
         }
 
-        print("Initial setup: spaceship position: \(spaceship.position), xVelocity: \(xApparentSpaceshipVelocity)")
+        print("Initial setup: spaceship position: \(spaceship.position), xVelocity: \(xApparentVelocity)")
     }
 
     private func setupAudioSession() {
@@ -141,8 +141,8 @@ class GameScene: SKScene, ObservableObject {
 
         // Update spaceship position and velocity
         let xDelta = spaceship.position.x - centerX
-        xApparentSpaceshipVelocity = xApparentSpaceshipVelocity * xDamping + spaceshipXForce + xDelta / 4
-        xApparentSpaceshipVelocity = min(max(-maxSpaceshipSpeedX, xApparentSpaceshipVelocity), maxSpaceshipSpeedX)
+        xApparentVelocity = xApparentVelocity * xDamping + xAccDelta + xDelta / 4
+        xApparentVelocity = min(max(-maxSpaceshipSpeedX, xApparentVelocity), maxSpaceshipSpeedX)
         let newX = min(max(size.width * 0.1, spaceship.position.x + CGFloat(crownDelta)), size.width * 0.9)
         // bow: y = a(x - h)^2 + baseline
         let a = bowDepth / pow(size.width * 0.4, 2) // Parabola coefficient
@@ -152,16 +152,16 @@ class GameScene: SKScene, ObservableObject {
         let newY = parabola + baseline
         spaceship.position = CGPoint(x: newX, y: newY)
         spaceship.zRotation = CGFloat(xDelta/128)
-        spaceshipXForce = 0.0 // Reset forces
+        xAccDelta = 0.0 // Reset forces
         spaceshipPosition = spaceship.position
-        let xCelestialOffset = -xApparentSpaceshipVelocity * celestialScrollSpeed
+        let xCelestialOffset = -xApparentVelocity * celestialScrollSpeed
         crownDelta = 0 // Reset crownDelta
         
         yOffset += yAccDelta
-        yOffset -= parabola / 8 - 0.1 // pitches down with light upward trend in center
+        yOffset -= parabola / 8 - 0.0 // pitches down with light upward trend in center
         yOffset = min(max(-size.height/2, yOffset), size.height/2)
         print("vertical offset: \(yOffset)")
-        yAccDelta = yAccDelta * 2 / 3
+        yAccDelta = yAccDelta * 2 / 3 // gradually reduces
         
         // Update camera
         if let camera = camera {
@@ -188,7 +188,7 @@ class GameScene: SKScene, ObservableObject {
         yBackgroundOffset += yApparentTravel
         yBackgroundOffset = min(max(-yMaxOffset, yBackgroundOffset), yMaxOffset)
         let yBackgroundPosition = centerY - yBackgroundOffset
-        let xScrollOffset = xApparentSpaceshipVelocity * bgScrollSpeed
+        let xScrollOffset = xApparentVelocity * bgScrollSpeed
         for background in backgroundNodes {
             var newX = background.position.x + xScrollOffset
             if newX < centerX - backgroundWidth / 2 - centerX {
@@ -232,7 +232,12 @@ class GameScene: SKScene, ObservableObject {
                         }
                     }
 
-                    // Jet hit box collisions for black holes
+                  
+                    // Apply gravitational force
+                    applyGravitationalForce(from: body)
+                }
+                if body.zDepth <= 90 {
+                      // Jet hit box collisions for black holes
                     if let blackHole = body as? BlackHole {
                         let jetHitBoxes = blackHole.getJetHitBoxes()
                         for (hitBox, isTop) in jetHitBoxes {
@@ -246,8 +251,6 @@ class GameScene: SKScene, ObservableObject {
                         }
                     }
 
-                    // Apply gravitational force
-                    applyGravitationalForce(from: body)
                 }
             }
         }
@@ -265,7 +268,7 @@ class GameScene: SKScene, ObservableObject {
             } else {
                 newBody = isBlackHole ? BlackHole() : Star()
             }
-            newBody.reset(xOffset: xApparentSpaceshipVelocity/2, yOffset: 0.0, zNewSpeed: zSpeedAvg)
+            newBody.reset(xOffset: xApparentVelocity/2, yOffset: 0.0, zNewSpeed: zSpeedAvg)
             newBody.zPosition = -1
             if newBody.parent == nil {
                 addChild(newBody)
@@ -280,6 +283,7 @@ class GameScene: SKScene, ObservableObject {
         }
 
         if isAnimatingOrbit {
+            print("orbit animation short curcuiting body removal")
             if let collidedBlackHole = animatingBlackHole {
                 collidedBlackHole.zDepth -= collidedBlackHole.zSpeed
                 if collidedBlackHole.zDepth <= 0 {
@@ -289,10 +293,10 @@ class GameScene: SKScene, ObservableObject {
                     inactiveCelestialBodies.append(collidedBlackHole)
                 }
             }
-            return
+            return // this prevents body removing and published spaceship position if animatingOrbit
         }
 
-        // Reset bodies
+        // Reset bodies to inactive state
         for body in bodiesToReset {
             body.isHidden = true
             body.removeFromParent()
@@ -341,7 +345,8 @@ class GameScene: SKScene, ObservableObject {
             self.activeBlackHoles.removeAll()
             self.activeStars.removeAll()
             self.placidFrameCount = self.placidPeriodFrames
-            self.zAccDelta = 9.0
+            self.zAccDelta = 19.0
+            self.yAccDelta = 700.0
             self.animatingBlackHole = nil
         }
         run(SKAction.sequence([wait, endAnimation]))
@@ -367,7 +372,7 @@ class GameScene: SKScene, ObservableObject {
         let t = max(0.0, min(1.0, (relativeY - baseY) / (tipY - baseY)))
         let forceScale = 1.0 - 0.75 * t
         let forceAngle = blackHole.zRotation - (isTop ? 0 : .pi) + .pi / 2
-        let forceMagnitude = (baseForce * forceScale * 0.25) / max(1.0, body.zDepth)
+        let forceMagnitude = (baseForce * forceScale * 5.25) / max(1.0, body.zDepth)
         // applying jet force
         print("Jet hit box collision: zDepth=\(body.zDepth), forceMagnitude=\(forceMagnitude), forceAngle=\(forceAngle * 180 / .pi)°, t=\(t), forceScale=\(forceScale)")
         applyForceToSpaceship(forceAngle: forceAngle, forceMagnitude: forceMagnitude)
@@ -388,9 +393,9 @@ class GameScene: SKScene, ObservableObject {
 //        print("setting zAccDelta with forceZ: \(forceJ), to: \(zAccDelta)")
         
         
-        spaceshipXForce += forceI * 0.7
+        xAccDelta += forceI * 0.7
         yAccDelta += forceJ * 0.7
-        print("applying force to spaceship: forceX: \(spaceshipXForce) yAcc: \(yAccDelta)")
+        print("applying force to spaceship: forceX: \(xAccDelta) yAcc: \(yAccDelta)")
 //        print("Applied force: forceAngle \(forceAngle * 180 / .pi)°, forceX: \(forceX), forceZ: \(forceZ)")
     }
 }
