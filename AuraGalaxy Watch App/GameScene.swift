@@ -371,10 +371,10 @@ class GameScene: SKScene, ObservableObject {
         let relativeY = isTop ? hitBoxLocalSpaceshipPos.y : -hitBoxLocalSpaceshipPos.y
         let t = max(0.0, min(1.0, (relativeY - baseY) / (tipY - baseY)))
         let forceScale = 1.0 - 0.75 * t
-        let forceAngle = blackHole.zRotation - (isTop ? 0 : .pi) + .pi / 2
+        let forceAngle = blackHole.zRotation + (isTop ? 0 : .pi) - .pi / 2
         let forceMagnitude = (baseForce * forceScale * 5.25) / max(1.0, body.zDepth)
         // applying jet force
-        print("Jet hit box collision: zDepth=\(body.zDepth), forceMagnitude=\(forceMagnitude), forceAngle=\(forceAngle * 180 / .pi)°, t=\(t), forceScale=\(forceScale)")
+        print("Jet hit box collision: zDepth=\(body.zDepth), forceMagnitude=\(forceMagnitude), zRot =\(blackHole.zRotation * 180 / .pi)°,forceAngle=\(forceAngle * 180 / .pi)°, t=\(t), forceScale=\(forceScale)")
         applyForceToSpaceship(forceAngle: forceAngle, forceMagnitude: forceMagnitude)
     }
 
