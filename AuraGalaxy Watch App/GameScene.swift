@@ -25,6 +25,8 @@ let verticalOffsetSigma: CGFloat = 0.4
 let verticalOffsetDefault: CGFloat = 25.0
 let bowDepth: CGFloat = 20.0 // Depth of downward bow at screen edges
 let crownDeltaMax: CGFloat = 5.0 // Max crown delta per frame
+let backgroundWidth: CGFloat = 1024 // this is the 1X width!
+let backgroundHeight: CGFloat = 768 // This is the 1X height!!
 
 @MainActor
 class GameScene: SKScene, ObservableObject {
@@ -50,6 +52,9 @@ class GameScene: SKScene, ObservableObject {
     private let maxCelestialBodies = 34
     private let blackHoleProbability = 0.2
     private var collisionSoundAction: SKAction? // Preloaded sound action
+    private var yMaxOffset: CGFloat { backgroundHeight - 2.1 * size.height }
+    private var centerX: CGFloat { size.width / 2 }
+    private var centerY: CGFloat { size.height / 2 }
 
     override init(size: CGSize) {
         super.init(size: size)
@@ -75,16 +80,15 @@ class GameScene: SKScene, ObservableObject {
         if backgroundTexture.size() == .zero {
             print("Error: Galaxy background texture 'galaxy_background' is missing or invalid")
         }
-        let backgroundWidth: CGFloat = 1024
-        let backgroundHeight = size.height * 1.8
         for i in 0..<2 {
             let background = SKSpriteNode(texture: backgroundTexture, size: CGSize(width: backgroundWidth, height: backgroundHeight))
-            background.position = CGPoint(x: CGFloat(i) * backgroundWidth - backgroundWidth / 2, y: size.height / 2)
+            background.position = CGPoint(x: CGFloat(i) * backgroundWidth - backgroundWidth / 2, y: backgroundHeight / 2)
             background.zPosition = -3
             addChild(background)
             backgroundNodes.append(background)
         }
-
+        
+        
         spaceship = Spaceship()
         spaceship.position = CGPoint(x: size.width / 2, y: size.height / 2)
         spaceshipPosition = spaceship.position
@@ -128,8 +132,6 @@ class GameScene: SKScene, ObservableObject {
     override func update(_ currentTime: TimeInterval) {
         frameCount += 1
         
-        let centerX = size.width / 2
-        let centerY = size.height / 2
         let zAccBase = zSpeedDelta
         zSpeedDelta = 0.0
         if zAccBase != 0.0 {
@@ -158,7 +160,7 @@ class GameScene: SKScene, ObservableObject {
         
         yOffset += ySpeed
         yOffset -= parabola / 8 - 0.0 // pitches down with light upward trend in center
-        yOffset = min(max(-size.height/2, yOffset), size.height/2)
+        yOffset = min(max(-centerY, yOffset), centerY)
         print("vertical offset: \(yOffset)")
         ySpeed = ySpeed * 2 / 3 // gradually reduces
         
@@ -180,8 +182,6 @@ class GameScene: SKScene, ObservableObject {
         }
         
         // Update background
-        let backgroundWidth: CGFloat = 1024 // this is the 1X width!
-        let yMaxOffset = size.height * 0.4 // Set by eye
         let yBaseSpeed: CGFloat = yMaxOffset / (60 * 10)
         let yApparentTravel = yBaseSpeed * (yOffset / yMaxOffset)
         yBackgroundOffset += yApparentTravel
@@ -225,6 +225,7 @@ class GameScene: SKScene, ObservableObject {
                             body.changeFace(to: "lovey_face")
                             // Play light haptic feedback
 //                            WKInterfaceDevice.current().play(.click)
+                            zSpeedDelta += zSpeedDefault * 2
                             if let soundAction = collisionSoundAction {
                               run(soundAction)
                             } else {
