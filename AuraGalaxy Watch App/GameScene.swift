@@ -15,7 +15,7 @@ let zSpeedDefault: CGFloat = 90.0 / 100.0
 let zSpeedUpperLimit = zSpeedDefault * 5.0
 let zSpeedLowerLimit = zSpeedDefault / 10.0
 let bgScrollSpeed: CGFloat = 0.2 / 60.0
-let celestialScrollSpeed: CGFloat = 1.0 / 60.0
+let celestialScrollSpeedFactor: CGFloat = 1.0 / 60.0
 let maxJetForce: CGFloat = 2000.0
 let xDamping: CGFloat = 0.95
 let blackHoleEjectionForceMagnitude: CGFloat = 800.0
@@ -37,13 +37,13 @@ class GameScene: SKScene, ObservableObject {
     private var crownDelta: Double = 0.0
     private var lastCrownInputTime: TimeInterval = 0.0
     private var yOffset: CGFloat = verticalOffsetDefault
-    private var yAccDelta: CGFloat = 0.0
+    private var ySpeed: CGFloat = 0.0
     private var yBackgroundOffset: CGFloat = 0.0
     private var isAnimatingOrbit: Bool = false
     private var animatingBlackHole: BlackHole?
     private var frameCount: Int = 0
     private var spawnIntervalFrames = 15
-    private var zAccDelta: CGFloat = 0.0
+    private var zSpeedDelta: CGFloat = 0.0
     private var zSpeedAvg: CGFloat = zSpeedDefault
     private var xApparentVelocity: CGFloat = 0.0
     private var xAccDelta: CGFloat = 0.0
@@ -130,10 +130,10 @@ class GameScene: SKScene, ObservableObject {
         
         let centerX = size.width / 2
         let centerY = size.height / 2
-        let zAccBase = zAccDelta
-        zAccDelta = 0.0
+        let zAccBase = zSpeedDelta
+        zSpeedDelta = 0.0
         if zAccBase != 0.0 {
-            print("Set zAccBase to \(zAccBase) from accDelta \(zAccDelta) when zSpeedAvg \(zSpeedAvg)")
+            print("Set zAccBase to \(zAccBase) from accDelta \(zSpeedDelta) when zSpeedAvg \(zSpeedAvg)")
         }
         
         zSpeedAvg = (7 * zSpeedAvg + zSpeedDefault) / 8 // Step zSpeedAvg towards default
@@ -153,14 +153,14 @@ class GameScene: SKScene, ObservableObject {
         spaceship.zRotation = CGFloat(xDelta/128)
         xAccDelta = 0.0 // Reset forces
         spaceshipPosition = spaceship.position
-        let xCelestialOffset = -xApparentVelocity * celestialScrollSpeed
+        let xCelestialOffset = -xApparentVelocity * celestialScrollSpeedFactor
         crownDelta = 0 // Reset crownDelta
         
-        yOffset += yAccDelta
+        yOffset += ySpeed
         yOffset -= parabola / 8 - 0.0 // pitches down with light upward trend in center
         yOffset = min(max(-size.height/2, yOffset), size.height/2)
         print("vertical offset: \(yOffset)")
-        yAccDelta = yAccDelta * 2 / 3 // gradually reduces
+        ySpeed = ySpeed * 2 / 3 // gradually reduces
         
         // Update camera
         if let camera = camera {
@@ -180,8 +180,8 @@ class GameScene: SKScene, ObservableObject {
         }
         
         // Update background
-        let backgroundWidth: CGFloat = 1024
-        let yMaxOffset = size.height * 0.4
+        let backgroundWidth: CGFloat = 1024 // this is the 1X width!
+        let yMaxOffset = size.height * 0.4 // Set by eye
         let yBaseSpeed: CGFloat = yMaxOffset / (60 * 10)
         let yApparentTravel = yBaseSpeed * (yOffset / yMaxOffset)
         yBackgroundOffset += yApparentTravel
@@ -331,7 +331,7 @@ class GameScene: SKScene, ObservableObject {
             print("Started orbit animation for Star at position: \(body.position)")
         }
 
-        applyEndForce(to: blackHole) // even moving this in the end animation isn't running the end force (though it is being logged)
+        applyEndForce(to: blackHole)
         
         // Futures
         let wait = SKAction.wait(forDuration: 3.0)
@@ -345,7 +345,7 @@ class GameScene: SKScene, ObservableObject {
             self.activeBlackHoles.removeAll()
             self.activeStars.removeAll()
             self.zSpeedAvg = zSpeedUpperLimit
-            self.yAccDelta = 700.0
+            self.ySpeed = 700.0
             self.animatingBlackHole = nil
         }
         run(SKAction.sequence([wait, endAnimation]))
@@ -394,8 +394,8 @@ class GameScene: SKScene, ObservableObject {
         
         
         xAccDelta += forceI * 0.7
-        yAccDelta += forceJ * 0.7
-        print("applying force to spaceship: forceX: \(xAccDelta) yAcc: \(yAccDelta)")
+        ySpeed += forceJ * 0.7
+        print("applying force to spaceship: forceX: \(xAccDelta) yAcc: \(ySpeed)")
 //        print("Applied force: forceAngle \(forceAngle * 180 / .pi)°, forceX: \(forceX), forceZ: \(forceZ)")
     }
 }
