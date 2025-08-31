@@ -50,8 +50,8 @@ class CelestialBody: SKSpriteNode, ZDepthBody {
         setScale(scale)
         let radialFactor = (100 - zDepth) / 100 * radialMagnitude
         position = CGPoint(
-            x: centerX + cos(direction) * radialFactor - xInitialOffset - xCumulativeOffset,
-            y: centerY + sin(direction) * radialFactor - yInitialOffset - verticalOffset
+            x: centerX - cos(direction) * radialFactor - xInitialOffset - xCumulativeOffset,
+            y: centerY - sin(direction) * radialFactor - yInitialOffset - verticalOffset
         )
         zPosition = 20 - zDepth / 5 // zDepth 0 -> zPosition 20, zDepth 100 -> zPosition 0
 //        print("Updated \(texture?.description ?? "unknown"): zDepth=\(zDepth), zPosition=\(zPosition), radialFactor=\(radialFactor), pos=\(position), xOffset=\(xOffset), xCumulativeOffset=\(xCumulativeOffset)")
