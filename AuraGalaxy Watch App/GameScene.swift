@@ -313,18 +313,19 @@ class GameScene: SKScene, ObservableObject {
         isAnimatingOrbit = true
         animatingBlackHole = blackHole
 
-        let radius: CGFloat = 20.0
-        let orbitPath = UIBezierPath(arcCenter: spaceship.position, radius: radius, startAngle: 0, endAngle: .pi * 2, clockwise: true)
-        let orbitAction = SKAction.follow(orbitPath.cgPath, asOffset: false, orientToPath: false, duration: 3.0)
-        let repeatOrbit = SKAction.repeat(orbitAction, count: 2)
+        let radius: CGFloat =  size.width / 6.0
+        let blackHoleOrbitPath = UIBezierPath(arcCenter: spaceship.position, radius: radius, startAngle: 0, endAngle: .pi * 2, clockwise: true)
+        let blackHoleOrbitAction = SKAction.follow(blackHoleOrbitPath.cgPath, asOffset: false, orientToPath: false, duration: 3.0)
+        let starOrbitPath = UIBezierPath(arcCenter: spaceship.position, radius: radius * 3, startAngle: 0, endAngle: .pi, clockwise: true)
+        let starOrbitAction = SKAction.follow(starOrbitPath.cgPath, asOffset: false, orientToPath: false, duration: 3.0)
 
         for body in activeBlackHoles {
-                body.run(repeatOrbit)
+                body.run(SKAction.repeat(blackHoleOrbitAction, count: 2))
                 print("Started orbit animation for BlackHole at position: \(body.position)")
         }
 
         for body in activeStars {
-            body.run(repeatOrbit)
+            body.run(starOrbitAction)
             body.changeFace(to: "worried_face")
             print("Started orbit animation for Star at position: \(body.position)")
         }
