@@ -319,13 +319,11 @@ class GameScene: SKScene, ObservableObject {
         let repeatOrbit = SKAction.repeat(orbitAction, count: 2)
 
         for body in activeBlackHoles {
-                body.speed = 0.0
                 body.run(repeatOrbit)
                 print("Started orbit animation for BlackHole at position: \(body.position)")
         }
 
         for body in activeStars {
-            body.speed = 0.0
             body.run(repeatOrbit)
             body.changeFace(to: "worried_face")
             print("Started orbit animation for Star at position: \(body.position)")
@@ -374,7 +372,7 @@ class GameScene: SKScene, ObservableObject {
         let forceAngle = blackHole.zRotation + (isTop ? 0 : .pi) - .pi / 2
         let forceMagnitude = (baseForce * forceScale * 5.25) / max(1.0, body.zDepth)
         // applying jet force
-        print("Jet hit box collision: zDepth=\(body.zDepth), forceMagnitude=\(forceMagnitude), zRot =\(blackHole.zRotation * 180 / .pi)°,forceAngle=\(forceAngle * 180 / .pi)°, t=\(t), forceScale=\(forceScale)")
+//        print("Jet hit box collision: zDepth=\(body.zDepth), forceMagnitude=\(forceMagnitude), zRot =\(blackHole.zRotation * 180 / .pi)°,forceAngle=\(forceAngle * 180 / .pi)°, t=\(t), forceScale=\(forceScale)")
         applyForceToSpaceship(forceAngle: forceAngle, forceMagnitude: forceMagnitude)
     }
 
