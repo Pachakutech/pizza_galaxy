@@ -42,7 +42,6 @@ class GameScene: SKScene, ObservableObject {
     private var isAnimatingOrbit: Bool = false
     private var animatingBlackHole: BlackHole?
     private var frameCount: Int = 0
-    private var placidFrameCount: Int = 0
     private var spawnIntervalFrames = 15
     private var zAccDelta: CGFloat = 0.0
     private var zSpeedAvg: CGFloat = zSpeedDefault
@@ -50,7 +49,6 @@ class GameScene: SKScene, ObservableObject {
     private var xAccDelta: CGFloat = 0.0
     private let maxCelestialBodies = 34
     private let blackHoleProbability = 0.2
-    private let placidPeriodFrames = 60
     private var collisionSoundAction: SKAction? // Preloaded sound action
 
     override init(size: CGSize) {
@@ -137,7 +135,8 @@ class GameScene: SKScene, ObservableObject {
         if zAccBase != 0.0 {
             print("Set zAccBase to \(zAccBase) from accDelta \(zAccDelta) when zSpeedAvg \(zSpeedAvg)")
         }
-        zSpeedAvg = (7 * zSpeedAvg + zSpeedDefault)/8
+        
+        zSpeedAvg = (7 * zSpeedAvg + zSpeedDefault) / 8 // Step zSpeedAvg towards default
 
         // Update spaceship position and velocity
         let xDelta = spaceship.position.x - centerX
@@ -179,7 +178,7 @@ class GameScene: SKScene, ObservableObject {
         } else if currentTime - lastCrownInputTime > 0.25 {
             spaceship.hideThrusters()
         }
-
+        
         // Update background
         let backgroundWidth: CGFloat = 1024
         let yMaxOffset = size.height * 0.4
@@ -199,7 +198,6 @@ class GameScene: SKScene, ObservableObject {
             background.position = CGPoint(x: newX, y: yBackgroundPosition)
         }
 //        print("Background y=\(yBackgroundPosition), verticalOffset=\(verticalOffset), yBackgroundOffset=\(yBackgroundOffset), ySpeedFactor=\(ySpeedFactor)")
-
         // Update celestial bodies
         var bodiesToReset: [CelestialBody] = []
         for body in activeBlackHoles + activeStars {
@@ -212,6 +210,9 @@ class GameScene: SKScene, ObservableObject {
                 let distance = spaceship.position.distance(to: body.position)
                 body.zSpeed = max(zSpeedLowerLimit, min(zSpeedUpperLimit, body.zSpeed + zAccBase))
                 zSpeedAvg += (body.zSpeed - zSpeedAvg) / CGFloat(activeStars.count + 1)
+                if zSpeedAvg != zSpeedDefault {
+                    print("zSpeedAvg changed!")
+                }
 
                 if body.zDepth <= 50 {
                     // Collision detection
@@ -343,8 +344,7 @@ class GameScene: SKScene, ObservableObject {
             self.inactiveCelestialBodies.append(contentsOf: self.activeStars)
             self.activeBlackHoles.removeAll()
             self.activeStars.removeAll()
-            self.placidFrameCount = self.placidPeriodFrames
-            self.zAccDelta = 2.0
+            self.zSpeedAvg = zSpeedUpperLimit
             self.yAccDelta = 700.0
             self.animatingBlackHole = nil
         }
