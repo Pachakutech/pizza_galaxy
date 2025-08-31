@@ -18,7 +18,7 @@ let bgScrollSpeed: CGFloat = 0.2 / 60.0
 let celestialScrollSpeed: CGFloat = 1.0 / 60.0
 let maxJetForce: CGFloat = 2000.0
 let xDamping: CGFloat = 0.95
-let blackHoleEjectionForceMagnitude: CGFloat = 200.0
+let blackHoleEjectionForceMagnitude: CGFloat = 800.0
 let zConversionFactor: CGFloat = 1000.0
 let gravitationalConstant: CGFloat = 1
 let verticalOffsetSigma: CGFloat = 0.4
@@ -344,7 +344,7 @@ class GameScene: SKScene, ObservableObject {
             self.activeBlackHoles.removeAll()
             self.activeStars.removeAll()
             self.placidFrameCount = self.placidPeriodFrames
-            self.zAccDelta = 19.0
+            self.zAccDelta = 2.0
             self.yAccDelta = 700.0
             self.animatingBlackHole = nil
         }
@@ -352,6 +352,7 @@ class GameScene: SKScene, ObservableObject {
     }
 
     private func applyGravitationalForce(from body: CelestialBody) {
+        // This points 0 to the right
         let direction = CGFloat(atan2(body.position.y - spaceship.position.y, body.position.x - spaceship.position.x))
         let distance = body.position.distance(to: body.position)
         let denominator = max(distance * distance, 1.0)
@@ -378,13 +379,13 @@ class GameScene: SKScene, ObservableObject {
     }
 
     private func applyEndForce(to blackHole: BlackHole) {
-        let jetAngle = blackHole.zRotation
-        let isAbove = spaceship.position.y > blackHole.position.y
-        let forceAngle = isAbove ? jetAngle + .pi : jetAngle
+        let jetAngle = blackHole.zRotation // use the zRot, which describes the upper angle (0 at top) to force spaceship up
+        let forceAngle = jetAngle + .pi / 2
                 print("Applying end force at forceAngle \(forceAngle * 180 / .pi)° magnitude \(blackHoleEjectionForceMagnitude)")
         applyForceToSpaceship(forceAngle: forceAngle, forceMagnitude: blackHoleEjectionForceMagnitude)
     }
 
+    // Assumes 0 is to the right, not top, subtract pi / 2 to convert from zRot to this
     private func applyForceToSpaceship(forceAngle: CGFloat, forceMagnitude: CGFloat) {
         let forceI = cos(forceAngle) * forceMagnitude
         let forceJ = sin(forceAngle) * forceMagnitude
