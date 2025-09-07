@@ -9,6 +9,7 @@ import SpriteKit
 
 @MainActor
 class CelestialBody: SKSpriteNode, ZDepthBody {
+    var hit = false
     var zSpeed: CGFloat = 0
     var zDepth: CGFloat = 100.0
     var mass: CGFloat = 1.0
@@ -68,6 +69,7 @@ class CelestialBody: SKSpriteNode, ZDepthBody {
         zDepth = 100
         zSpeed = zNewSpeed
         setScale(0.1)
+        hit = false
         isHidden = false
     }
      

@@ -11,8 +11,8 @@ import WatchKit
 import AVFoundation
 
 let maxSpaceshipSpeedX: CGFloat = 200.0
-let zSpeedDefault: CGFloat = 90.0 / 100.0
-let zSpeedUpperLimit = zSpeedDefault * 5.0
+let zSpeedDefault: CGFloat = 60.0 / 100.0
+let zSpeedUpperLimit = zSpeedDefault * 15.0
 let zSpeedLowerLimit = zSpeedDefault / 10.0
 let bgScrollSpeed: CGFloat = 0.2 / 60.0
 let celestialScrollSpeedFactor: CGFloat = 1.0 / 60.0
@@ -218,6 +218,7 @@ class GameScene: SKScene, ObservableObject {
                     // Collision detection
                     let collisionThreshold = (spaceship.size.width / 2 + body.size.width / 2)
                     if distance < collisionThreshold {
+                        if !body.hit {
                         if body is BlackHole {
                             startOrbitAnimation(for: body as! BlackHole)
                         } else {
@@ -225,13 +226,15 @@ class GameScene: SKScene, ObservableObject {
                             body.changeFace(to: "lovey_face")
                             // Play light haptic feedback
 //                            WKInterfaceDevice.current().play(.click)
-                            zSpeedDelta += zSpeedDefault * 2
+                            zSpeedDelta += zSpeedDefault * 3 / 4
                             if let soundAction = collisionSoundAction {
                               run(soundAction)
                             } else {
                               print("Collision sound action not available")
                             }
                         }
+                        }
+                        body.hit = true
                     }
 
                   
@@ -328,7 +331,7 @@ class GameScene: SKScene, ObservableObject {
 
         for body in activeStars {
             body.run(starOrbitAction)
-            body.changeFace(to: "worried_face")
+            body.changeFace(to: "silly_face")
             print("Started orbit animation for Star at position: \(body.position)")
         }
 
