@@ -52,6 +52,11 @@ class GameScene: SKScene, ObservableObject {
     private let maxCelestialBodies = 34
     private let blackHoleProbability = 0.2
     private var collisionSoundAction: SKAction?  // Preloaded sound action
+    private var backgroundSprite: SKSpriteNode? {
+        didSet {
+              print("Background sprite set. Shader is: \(backgroundSprite?.shader)")
+          }
+    }
     private var yMaxOffset: CGFloat { backgroundHeight - 2.2 * size.height }  // the subtracted factor is a fudge factor
     private var centerX: CGFloat { size.width / 2 }
     private var centerY: CGFloat { size.height / 2 }
@@ -76,24 +81,25 @@ class GameScene: SKScene, ObservableObject {
         camera = cameraNode
         addChild(cameraNode)
 
-        let backgroundTexture = SKTexture(imageNamed: "galaxy_background")
-        if backgroundTexture.size() == .zero {
-            print(
-                "Error: Galaxy background texture 'galaxy_background' is missing or invalid"
-            )
+        let galaxyTexture1 = SKTexture(imageNamed: "background_1")
+        let galaxyTexture2 = SKTexture(imageNamed: "background_2")
+
+        if galaxyTexture1.size() == .zero {
+            print("Error: background_1 texture is invalid.")
         }
-        for i in 0..<2 {
-            let background = SKSpriteNode(
-                texture: backgroundTexture,
-                size: CGSize(width: backgroundWidth, height: backgroundHeight)
-            )
-            background.position = CGPoint(
-                x: CGFloat(i) * backgroundWidth - backgroundWidth / 2,
-                y: backgroundHeight / 2
-            )
-            background.zPosition = -3
-            addChild(background)
-            backgroundNodes.append(background)
+        if galaxyTexture2.size() == .zero {
+            print("Error: background_2 texture is invalid.")
+        }
+
+        if let backgroundShader = ShaderManager.shared.getGalaxyShader() {
+            let backgroundSprite = SKSpriteNode(color: .white, size: size)
+            backgroundSprite.shader = backgroundShader
+            backgroundSprite.position = CGPoint(x: centerX, y: centerY)
+            backgroundSprite.zPosition = -3
+            print("Success: SKShader initialized a sprite.")
+            addChild(backgroundSprite)
+        } else {
+            print("Error: SKShader initialization failed.")
         }
 
         spaceship = Spaceship()
@@ -218,16 +224,19 @@ class GameScene: SKScene, ObservableObject {
         yBackgroundOffset = min(max(-yMaxOffset, yBackgroundOffset), yMaxOffset)
         let yBackgroundPosition = centerY - yBackgroundOffset
         let xScrollOffset = xApparentVelocity * bgScrollSpeed
-        for background in backgroundNodes {
-            var newX = background.position.x + xScrollOffset
-            if newX < centerX - backgroundWidth / 2 - centerX {
-                newX += backgroundWidth * 2
-            } else if newX > centerX + backgroundWidth / 2 + centerX {
-                newX -= backgroundWidth * 2
-            }
-            background.position = CGPoint(x: newX, y: yBackgroundPosition)
-        }
-        //        print("Background y=\(yBackgroundPosition), verticalOffset=\(verticalOffset), yBackgroundOffset=\(yBackgroundOffset), ySpeedFactor=\(ySpeedFactor)")
+
+        backgroundSprite?.shader?.uniformNamed("u_scroll_progress_h")?.floatValue += Float(xScrollOffset)
+        backgroundSprite?.shader?.uniformNamed("u_scroll_progress_v")?.floatValue = Float(yBackgroundPosition)
+        //        for background in backgroundNodes {
+        //            var newX = background.position.x + xScrollOffset
+        //            if newX < centerX - backgroundWidth / 2 - centerX {
+        //                newX += backgroundWidth * 2
+        //            } else if newX > centerX + backgroundWidth / 2 + centerX {
+        //                newX -= backgroundWidth * 2
+        //            }
+        //            background.position = CGPoint(x: newX, y: yBackgroundPosition)
+        //        }
+        //        //        print("Background y=\(yBackgroundPosition), verticalOffset=\(verticalOffset), yBackgroundOffset=\(yBackgroundOffset), ySpeedFactor=\(ySpeedFactor)")
         // Update celestial bodies
         var bodiesToReset: [CelestialBody] = []
         for body in activeBlackHoles + activeStars {
