@@ -81,16 +81,6 @@ class GameScene: SKScene, ObservableObject {
         camera = cameraNode
         addChild(cameraNode)
 
-        let galaxyTexture1 = SKTexture(imageNamed: "background_1")
-        let galaxyTexture2 = SKTexture(imageNamed: "background_2")
-
-        if galaxyTexture1.size() == .zero {
-            print("Error: background_1 texture is invalid.")
-        }
-        if galaxyTexture2.size() == .zero {
-            print("Error: background_2 texture is invalid.")
-        }
-
         if let backgroundShader = ShaderManager.shared.getGalaxyShader() {
             let backgroundSprite = SKSpriteNode(color: .white, size: size)
             backgroundSprite.shader = backgroundShader
@@ -161,11 +151,6 @@ class GameScene: SKScene, ObservableObject {
 
         let zAccBase = zSpeedDelta
         zSpeedDelta = 0.0
-        if zAccBase != 0.0 {
-            print(
-                "Set zAccBase to \(zAccBase) from accDelta \(zSpeedDelta) when zSpeedAvg \(zSpeedAvg)"
-            )
-        }
 
         zSpeedAvg = (7 * zSpeedAvg + zSpeedDefault) / 8  // Step zSpeedAvg towards default
 
@@ -197,7 +182,6 @@ class GameScene: SKScene, ObservableObject {
         yOffset += ySpeed
         yOffset -= parabola / 8 - 0.0  // pitches down with light upward trend in center
         yOffset = min(max(-centerY, yOffset), centerY)
-        print("vertical offset: \(yOffset)")
         ySpeed = ySpeed * 2 / 3  // gradually reduces
 
         // Update camera
@@ -212,7 +196,6 @@ class GameScene: SKScene, ObservableObject {
             spaceship.applyThrust(crownDelta: crownDelta)
             //            verticalOffset += CGFloat(crownDelta) * 15.0
             //            verticalOffset = min(max(verticalOffset, -size.height * verticalOffsetSigma), size.height * verticalOffsetSigma)
-            print("Crown input: delta=\(crownDelta), verticalOffset=\(yOffset)")
         } else if currentTime - lastCrownInputTime > 0.25 {
             spaceship.hideThrusters()
         }
@@ -225,18 +208,8 @@ class GameScene: SKScene, ObservableObject {
         let yBackgroundPosition = centerY - yBackgroundOffset
         let xScrollOffset = xApparentVelocity * bgScrollSpeed
 
-        backgroundSprite?.shader?.uniformNamed("u_scroll_progress_h")?.floatValue += Float(xScrollOffset)
-        backgroundSprite?.shader?.uniformNamed("u_scroll_progress_v")?.floatValue = Float(yBackgroundPosition)
-        //        for background in backgroundNodes {
-        //            var newX = background.position.x + xScrollOffset
-        //            if newX < centerX - backgroundWidth / 2 - centerX {
-        //                newX += backgroundWidth * 2
-        //            } else if newX > centerX + backgroundWidth / 2 + centerX {
-        //                newX -= backgroundWidth * 2
-        //            }
-        //            background.position = CGPoint(x: newX, y: yBackgroundPosition)
-        //        }
-        //        //        print("Background y=\(yBackgroundPosition), verticalOffset=\(verticalOffset), yBackgroundOffset=\(yBackgroundOffset), ySpeedFactor=\(ySpeedFactor)")
+        ShaderManager.shared.addScrollH(scroll: Float(-xScrollOffset / 100))
+        ShaderManager.shared.addScrollV(scroll: Float(yBackgroundOffset / 10000))
         // Update celestial bodies
         var bodiesToReset: [CelestialBody] = []
         for body in activeBlackHoles + activeStars {
@@ -258,9 +231,6 @@ class GameScene: SKScene, ObservableObject {
                 )
                 zSpeedAvg +=
                     (body.zSpeed - zSpeedAvg) / CGFloat(activeStars.count + 1)
-                if zSpeedAvg != zSpeedDefault {
-                    print("zSpeedAvg changed!")
-                }
 
                 if body.zDepth <= 50 {
                     // Collision detection
