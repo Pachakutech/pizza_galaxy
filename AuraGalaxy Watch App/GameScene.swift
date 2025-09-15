@@ -14,13 +14,13 @@ let maxSpaceshipSpeedX: CGFloat = 200.0
 let zSpeedDefault: CGFloat = 60.0 / 100.0
 let zSpeedUpperLimit = zSpeedDefault * 15.0
 let zSpeedLowerLimit = zSpeedDefault / 10.0
-let bgScrollSpeed: CGFloat = 0.2 / 60.0
+let bgScrollSpeed: CGFloat = 30.0
 let celestialScrollSpeedFactor: CGFloat = 1.0 / 60.0
 let maxJetForce: CGFloat = 2000.0
 let xDamping: CGFloat = 0.95
 let blackHoleEjectionForceMagnitude: CGFloat = 800.0
 let zConversionFactor: CGFloat = 1000.0
-let gravitationalConstant: CGFloat = 1
+let gravitationalConstant: CGFloat = 0.1
 let verticalOffsetSigma: CGFloat = 0.4
 let verticalOffsetDefault: CGFloat = 25.0
 let bowDepth: CGFloat = 20.0  // Depth of downward bow at screen edges
@@ -40,7 +40,8 @@ class GameScene: SKScene, ObservableObject {
     private var lastCrownInputTime: TimeInterval = 0.0
     private var yOffset: CGFloat = verticalOffsetDefault
     private var ySpeed: CGFloat = 0.0
-    private var yBackgroundOffset: CGFloat = 0.0
+    private var yAcc: CGFloat = 0.0
+    private var yBackgrondOffset: CGFloat = 0.0
     private var isAnimatingOrbit: Bool = false
     private var animatingBlackHole: BlackHole?
     private var frameCount: Int = 0
@@ -75,6 +76,10 @@ class GameScene: SKScene, ObservableObject {
         let cameraNode = SKCameraNode()
         cameraNode.position = CGPoint(x: size.width / 2, y: size.height / 2)
         camera = cameraNode
+        if let camera = camera {
+            camera.position.y = centerY
+            camera.position.x = centerX
+        }
         addChild(cameraNode)
 
         if let backgroundShader = ShaderManager.shared.getGalaxyShader() {
@@ -175,10 +180,15 @@ class GameScene: SKScene, ObservableObject {
         let xCelestialOffset = -xApparentVelocity * celestialScrollSpeedFactor
         crownDelta = 0  // Reset crownDelta
 
+        if ySpeed == 0.0 {
+            print("found ySpeed == 0.0 with yAcc: \(yAcc)")
+        }
+        ySpeed += yAcc
+        yAcc = 0.0
         yOffset += ySpeed
-        yOffset -= parabola / 8 - 0.0  // pitches down with light upward trend in center
+        ySpeed = ySpeed * 1 / 9  // gradually reduces
+        yOffset -= parabola / 8 - 0.4  // pitches down with light upward trend in center
         yOffset = min(max(-centerY, yOffset), centerY)
-        ySpeed = ySpeed * 2 / 3  // gradually reduces
 
         // Update camera
         if let camera = camera {
@@ -197,15 +207,12 @@ class GameScene: SKScene, ObservableObject {
         }
 
         // Update background
-        let yBaseSpeed: CGFloat = yMaxOffset / (60 * 10)
-        let yApparentTravel = yBaseSpeed * (yOffset / yMaxOffset)
-        yBackgroundOffset += yApparentTravel
-        yBackgroundOffset = min(max(-yMaxOffset, yBackgroundOffset), yMaxOffset)
-        let yBackgroundPosition = centerY - yBackgroundOffset
-        let xScrollOffset = xApparentVelocity * bgScrollSpeed
+        let yApparentTravel = yOffset
+        let yScrollOffset = min(max(-yMaxOffset, yApparentTravel), yMaxOffset)
+        let xScrollOffset = xApparentVelocity / bgScrollSpeed
 
-        ShaderManager.shared.addScrollH(scroll: Float(-xScrollOffset / 100))
-        ShaderManager.shared.addScrollV(scroll: Float(yBackgroundOffset / 10000))
+        ShaderManager.shared.addScrollH(scroll: Float(-xScrollOffset / 1000))
+        ShaderManager.shared.addScrollV(scroll: Float(yScrollOffset / 10000))
         // Update celestial bodies
         var bodiesToReset: [CelestialBody] = []
         for body in activeBlackHoles + activeStars {
@@ -235,6 +242,8 @@ class GameScene: SKScene, ObservableObject {
                     if distance < collisionThreshold {
                         if !body.hit {
                             if body is BlackHole {
+                                ySpeed = 0.0
+                                xApparentVelocity = 0.0
                                 startOrbitAnimation(for: body as! BlackHole)
                             } else {
                                 print(
@@ -422,7 +431,6 @@ class GameScene: SKScene, ObservableObject {
             self.activeBlackHoles.removeAll()
             self.activeStars.removeAll()
             self.zSpeedAvg = zSpeedUpperLimit
-            self.ySpeed = 700.0
             self.animatingBlackHole = nil
         }
         run(SKAction.sequence([wait, endAnimation]))
@@ -442,6 +450,7 @@ class GameScene: SKScene, ObservableObject {
             (gravitationalConstant * body.mass) / denominator
         //        print("Applying gravitational force of \(gravForceMagnitude) at forceAngle \(direction * 180 / .pi)°")
         // applying grav force
+        ySpeed = ySpeed * 3 / 4 // slow down turning
         applyForceToSpaceship(
             forceAngle: direction,
             forceMagnitude: gravForceMagnitude
@@ -501,7 +510,7 @@ class GameScene: SKScene, ObservableObject {
         //        print("setting zAccDelta with forceZ: \(forceJ), to: \(zAccDelta)")
 
         xAccDelta += forceI * 0.7
-        ySpeed += forceJ * 0.7
+        yAcc += forceJ * 0.7
         print(
             "applying force to spaceship: forceX: \(xAccDelta) yAcc: \(ySpeed)"
         )
