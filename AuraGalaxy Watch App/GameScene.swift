@@ -319,7 +319,7 @@ class GameScene: SKScene, ObservableObject {
             }
             newBody.reset(
                 xOffset: xApparentVelocity / 2,
-                yOffset: 0.0,
+                yOffset: -yOffset / 2,
                 zNewSpeed: zSpeedAvg
             )
             newBody.zPosition = -1
