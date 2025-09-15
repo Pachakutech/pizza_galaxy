@@ -52,11 +52,7 @@ class GameScene: SKScene, ObservableObject {
     private let maxCelestialBodies = 34
     private let blackHoleProbability = 0.2
     private var collisionSoundAction: SKAction?  // Preloaded sound action
-    private var backgroundSprite: SKSpriteNode? {
-        didSet {
-              print("Background sprite set. Shader is: \(backgroundSprite?.shader)")
-          }
-    }
+    private var backgroundSprite: SKSpriteNode?
     private var yMaxOffset: CGFloat { backgroundHeight - 2.2 * size.height }  // the subtracted factor is a fudge factor
     private var centerX: CGFloat { size.width / 2 }
     private var centerY: CGFloat { size.height / 2 }
