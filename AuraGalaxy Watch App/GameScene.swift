@@ -187,7 +187,7 @@ class GameScene: SKScene, ObservableObject {
         yAcc = 0.0
         yOffset += ySpeed
         ySpeed = ySpeed * 1 / 9  // gradually reduces
-        yOffset -= parabola / 8 - 0.4  // pitches down with light upward trend in center
+        yOffset -= parabola / 8 - 0.8  // pitches down with light upward trend in center
         yOffset = min(max(-centerY, yOffset), centerY)
 
         // Update camera
@@ -207,8 +207,7 @@ class GameScene: SKScene, ObservableObject {
         }
 
         // Update background
-        let yApparentTravel = yOffset
-        let yScrollOffset = min(max(-yMaxOffset, yApparentTravel), yMaxOffset)
+        let yScrollOffset = min(max(-yMaxOffset, yOffset), yMaxOffset)
         let xScrollOffset = xApparentVelocity / bgScrollSpeed
 
         ShaderManager.shared.addScrollH(scroll: Float(-xScrollOffset / 1000))
