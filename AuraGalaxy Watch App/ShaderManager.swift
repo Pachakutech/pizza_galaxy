@@ -12,6 +12,7 @@ class ShaderManager {
     private var galaxyShader: SKShader?
     private var scrollH = SKUniform(name: "u_scroll_progress_h", float: 0.0)
     private var scrollV = SKUniform(name: "u_scroll_progress_v", float: 0.0)
+    private var rotationAngle = SKUniform(name: "u_rotation", float: 0.0)
     private var galaxyTextureUniform: SKUniform!
     private var appearanceUniformH: SKUniform!
     private var appearanceUniformV: SKUniform!
@@ -50,6 +51,13 @@ class ShaderManager {
             source: """
                 void main() {
                     vec2 uv = v_tex_coord;
+                    uv -= 0.5;
+                    uv = vec2(
+                        uv.x * cos(u_rotation) - uv.y * sin(u_rotation),
+                        uv.x * sin(u_rotation) + uv.y * cos(u_rotation)
+                    );
+                    uv += 0.5;
+
                     uv.x += u_scroll_progress_h;
                     uv.y += u_scroll_progress_v;
 
@@ -58,7 +66,7 @@ class ShaderManager {
                     float local_scroll_v = mod(u_scroll_progress_v - u_appearance_threshold_v, \(repetitionPeriod));
 
                     // u_galaxy_1 UV: non-tiling, starts at -3.0, centers at 0.0
-                    vec2 uv_1 = v_tex_coord;
+                    vec2 uv_1 = uv;
                     uv_1.x += local_scroll_h - \(initialOffset);
                     uv_1.y += local_scroll_v - \(initialOffset);
 
@@ -102,6 +110,7 @@ class ShaderManager {
                 scrollV,
                 appearanceUniformH,
                 appearanceUniformV,
+                rotationAngle,
             ]
         )
     }
@@ -116,6 +125,14 @@ class ShaderManager {
 
     func addScrollV(scroll: Float) {
         scrollV.floatValue += scroll
+    }
+
+    func addRotation(angle: Float) {
+        rotationAngle.floatValue += angle
+    }
+
+    func setRotation(angle: Float) {
+        rotationAngle.floatValue = angle
     }
 
     func setGalaxyTexture(forLevel level: Int) {

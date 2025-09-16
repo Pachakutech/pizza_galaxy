@@ -79,7 +79,7 @@ class BlackHole: CelestialBody {
     func updateJetAngle() {
         jetAngle = generateBiasedRadian(sigma: 6, mean: 0)
         self.zRotation = jetAngle
-        print("Updated black hole rotation: jetAngle=\(jetAngle * 180 / .pi)°")
+//        print("Updated black hole rotation: jetAngle=\(jetAngle * 180 / .pi)°")
     }
 
     func getJetHitBoxes() -> [(SKSpriteNode, Bool)] {
