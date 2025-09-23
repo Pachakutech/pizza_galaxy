@@ -45,14 +45,10 @@ class ShaderManager {
             texture: SKTexture(imageNamed: "background_level_1")
         )
 
+        
         galaxyShader = SKShader(
             source: """
                 void main() {
-                    // Non-rotated UVs for u_galaxy_1
-                    vec2 uv_no_rot = v_tex_coord;
-                    uv_no_rot.x += u_scroll_progress_h;
-                    uv_no_rot.y += u_scroll_progress_v;
-
                     // Rotated UVs for tiled backgrounds
                     vec2 uv = v_tex_coord;
                     uv.x += u_scroll_progress_h;
@@ -64,10 +60,10 @@ class ShaderManager {
                     );
                     uv += 0.5;
 
-                    // u_galaxy_1 using non-rotated UVs
+                    // Non-rotated UVs for u_galaxy_1 (same as original)
                     float local_scroll_h = mod(u_scroll_progress_h - u_appearance_threshold_h, \(repetitionPeriod));
                     float local_scroll_v = mod(u_scroll_progress_v - u_appearance_threshold_v, \(repetitionPeriod));
-                    vec2 uv_1 = uv_no_rot;
+                    vec2 uv_1 = v_tex_coord;
                     uv_1.x += local_scroll_h - \(initialOffset);
                     uv_1.y += local_scroll_v - \(initialOffset);
 
@@ -97,22 +93,22 @@ class ShaderManager {
                 }
                 """,
             uniforms: [
-                galaxyTextureUniform,
-                SKUniform(
-                    name: "u_galaxy_2",
-                    texture: SKTexture(imageNamed: "background_2")
-                ),
-                SKUniform(
-                    name: "u_galaxy_3",
-                    texture: SKTexture(imageNamed: "background_3")
-                ),
-                scrollH,
-                scrollV,
-                appearanceUniformH,
-                appearanceUniformV,
-                rotationAngle,
-            ]
-        )
+            galaxyTextureUniform,
+            SKUniform(
+                name: "u_galaxy_2",
+                texture: SKTexture(imageNamed: "background_2")
+            ),
+            SKUniform(
+                name: "u_galaxy_3",
+                texture: SKTexture(imageNamed: "background_3")
+            ),
+            scrollH,
+            scrollV,
+            appearanceUniformH,
+            appearanceUniformV,
+            rotationAngle
+        ]
+)
     }
 
     func getGalaxyShader() -> SKShader? {
