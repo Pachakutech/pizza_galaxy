@@ -19,13 +19,12 @@ class ShaderManager {
     private(set) var appearanceThresholdH: Float = 0.0
     private(set) var appearanceThresholdV: Float = 0.0
     private(set) var centerAlignmentValue: Float = 0.0
-    private let tilePeriod: Float = 1.0  // UVs at 1X scale
-    private let speedMultiplier: Float = 1.0  // Standard scroll speed
-    private let repetitionPeriod: Float = 8.0  // 8 screen widths/heights
-    private let initialOffset: Float = 3.0  // Start 3 widths/heights right/up
+    private let tilePeriod: Float = 1.0
+    private let speedMultiplier: Float = 1.0
+    private let repetitionPeriod: Float = 8.0
+    private let initialOffset: Float = 3.0
 
     private init() {
-        // Random thresholds (3 to 10 tile periods)
         let randomNumPeriodsH = Float.random(in: 3...10)
         let randomNumPeriodsV = Float.random(in: 3...10)
         appearanceThresholdH = -randomNumPeriodsH * tilePeriod
@@ -39,8 +38,7 @@ class ShaderManager {
             float: appearanceThresholdV
         )
 
-        // Center when u_galaxy_1 moves 3.0 UV units
-        centerAlignmentValue = initialOffset / speedMultiplier  // 3.0 / 1.0 = 3.0
+        centerAlignmentValue = initialOffset / speedMultiplier
 
         galaxyTextureUniform = SKUniform(
             name: "u_galaxy_1",
@@ -50,7 +48,15 @@ class ShaderManager {
         galaxyShader = SKShader(
             source: """
                 void main() {
+                    // Non-rotated UVs for u_galaxy_1
+                    vec2 uv_no_rot = v_tex_coord;
+                    uv_no_rot.x += u_scroll_progress_h;
+                    uv_no_rot.y += u_scroll_progress_v;
+
+                    // Rotated UVs for tiled backgrounds
                     vec2 uv = v_tex_coord;
+                    uv.x += u_scroll_progress_h;
+                    uv.y += u_scroll_progress_v;
                     uv -= 0.5;
                     uv = vec2(
                         uv.x * cos(u_rotation) - uv.y * sin(u_rotation),
@@ -58,15 +64,10 @@ class ShaderManager {
                     );
                     uv += 0.5;
 
-                    uv.x += u_scroll_progress_h;
-                    uv.y += u_scroll_progress_v;
-
-                    // Compute local scroll for u_galaxy_1, with periodicity
+                    // u_galaxy_1 using non-rotated UVs
                     float local_scroll_h = mod(u_scroll_progress_h - u_appearance_threshold_h, \(repetitionPeriod));
                     float local_scroll_v = mod(u_scroll_progress_v - u_appearance_threshold_v, \(repetitionPeriod));
-
-                    // u_galaxy_1 UV: non-tiling, starts at -3.0, centers at 0.0
-                    vec2 uv_1 = uv;
+                    vec2 uv_1 = uv_no_rot;
                     uv_1.x += local_scroll_h - \(initialOffset);
                     uv_1.y += local_scroll_v - \(initialOffset);
 
@@ -75,13 +76,12 @@ class ShaderManager {
                     if (local_scroll_h >= 0.0 && local_scroll_v >= 0.0 &&
                         uv_1.x >= 0.0 && uv_1.x <= 1.0 && uv_1.y >= 0.0 && uv_1.y <= 1.0) {
                         color1 = texture2D(u_galaxy_1, uv_1);
-                        // Smooth edges with smoothstep
                         float edge_h = min(smoothstep(0.0, 0.2, uv_1.x), smoothstep(1.0, 0.8, uv_1.x));
                         float edge_v = min(smoothstep(0.0, 0.2, uv_1.y), smoothstep(1.0, 0.8, uv_1.y));
                         alpha1 = edge_h * edge_v * color1.a;
                     }
 
-                    // Tiled backgrounds
+                    // Tiled backgrounds using rotated UVs
                     vec2 wrapped_uv_2 = fract(uv + 0.5);
                     vec2 wrapped_uv_3 = fract(uv + 0.3);
 

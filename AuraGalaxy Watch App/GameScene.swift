@@ -227,7 +227,7 @@ class GameScene: SKScene, ObservableObject {
         var isGalaxyVisible = false
         var closestOffset: (Float, Float)? = nil
         var minDistance: Float = .greatestFiniteMagnitude
-
+        
         for (offsetH, offsetV) in offsets {
             if abs(offsetH) <= 0.5 && abs(offsetV) <= 0.5 {
                 isGalaxyVisible = true
@@ -446,7 +446,7 @@ class GameScene: SKScene, ObservableObject {
         }
         backgroundSprite?.run(
             SKAction.customAction(withDuration: 3.0) { node, time in
-                ShaderManager.shared.addRotation(angle: .pi * Float(time))
+                ShaderManager.shared.addRotation(angle: .pi * 2 * Float(time))
             }
         )
         applyEndForce(to: blackHole)
