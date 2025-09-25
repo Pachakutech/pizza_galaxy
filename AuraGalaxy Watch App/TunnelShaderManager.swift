@@ -1,8 +1,3 @@
-//
-//  TunnelShaderManager.swift
-//  AuraGalaxy
-//
-
 import SpriteKit
 
 class TunnelShaderManager {
@@ -17,54 +12,118 @@ class TunnelShaderManager {
                 name: "u_galaxy_2",
                 texture: SKTexture(imageNamed: "background_2")
             ),
-            SKUniform(
-                name: "u_galaxy_3",
-                texture: SKTexture(imageNamed: "background_3")
-            ),
             scrollH,
             scrollV
         ]
 
+        // Step 0: Baseline (your working Test 4 with explicit centering - should work)
+//        tunnelShader = SKShader(
+//            source: """
+//                void main() {
+//                    vec2 uv = v_tex_coord; // No centering yet
+//                    vec2 tunnel_uv;
+//                    tunnel_uv.x = uv.x + u_scroll_progress_v;
+//                    tunnel_uv.y = uv.y + u_scroll_progress_h;
+//                    vec4 color = texture2D(u_galaxy_2, fract(tunnel_uv));
+//                    gl_FragColor = vec4(color.rgb, 1.0);
+//                }
+//                """,
+//            uniforms: uniformList
+//        )
+
+        // Step 1: Add centering (subtract 0.5) - centers the scroll on screen middle (should work)
+//        tunnelShader = SKShader(
+//            source: """
+//                void main() {
+//                    vec2 uv = v_tex_coord - vec2(0.5); // Center UVs
+//                    vec2 tunnel_uv;
+//                    tunnel_uv.x = uv.x + u_scroll_progress_v;
+//                    tunnel_uv.y = uv.y + u_scroll_progress_h;
+//                    vec4 color = texture2D(u_galaxy_2, fract(tunnel_uv));
+//                    gl_FragColor = vec4(color.rgb, 1.0);
+//                }
+//                """,
+//            uniforms: uniformList
+//        )
+
+        // Step 2: Add polar coordinates (compute r and theta, but don't use yet - tests if math functions work)
+//        tunnelShader = SKShader(
+//            source: """
+//                void main() {
+//                    vec2 uv = v_tex_coord - vec2(0.5); // Center UVs
+//                    float r = length(uv); // Radial distance
+//                    float theta = atan(uv.y, uv.x); // Angle
+//                    vec2 tunnel_uv;
+//                    tunnel_uv.x = uv.x + u_scroll_progress_v;
+//                    tunnel_uv.y = uv.y + u_scroll_progress_h;
+//                    vec4 color = texture2D(u_galaxy_2, fract(tunnel_uv));
+//                    gl_FragColor = vec4(color.rgb, 1.0); // Ignore r/theta for now
+//                }
+//                """,
+//            uniforms: uniformList
+//        )
+
+        // Step 3: Add donut hole (black center using step/mix - no conditionals)
+//        tunnelShader = SKShader(
+//            source: """
+//                void main() {
+//                    vec2 uv = v_tex_coord - vec2(0.5); // Center UVs
+//                    float r = length(uv); // Radial distance
+//                    float theta = atan(uv.y, uv.x); // Angle (unused for now)
+//                    
+//                    // Donut hole (black for r < 0.1)
+//                    float hole_step = step(0.1, r); // 0 in hole (r < 0.1), 1 outside
+//                    vec4 hole_color = vec4(0.0, 0.0, 0.0, 1.0); // Black hole
+//                    
+//                    vec2 tunnel_uv;
+//                    tunnel_uv.x = uv.x + u_scroll_progress_v;
+//                    tunnel_uv.y = uv.y + u_scroll_progress_h;
+//                    vec4 tunnel_color = texture2D(u_galaxy_2, fract(tunnel_uv));
+//                    
+//                    // Blend: hole inside, texture outside
+//                    gl_FragColor = mix(hole_color, tunnel_color, hole_step);
+//                }
+//                """,
+//            uniforms: uniformList
+//        )
+
+        // Step 4: Add polar UV mapping (remap UVs to polar for tunnel effect - full "diving" illusion)
         tunnelShader = SKShader(
             source: """
                 void main() {
-                    vec2 uv = v_tex_coord - 0.5; // Center UVs
+                    vec2 uv = v_tex_coord - vec2(0.5); // Center UVs
+                    float r = length(uv); // Radial distance from center
+                    float theta = atan(uv.y, uv.x); // Angle for polar coords
                     
-                    // Polar coordinates
-                    float r = length(uv);
-                    float theta = atan(uv.y, uv.x);
+                    // Donut hole (black center for r < 0.1)
+                    float hole_step = step(0.1, r); // 0 in hole, 1 in tunnel
+                    vec4 hole_color = vec4(0.0, 0.0, 0.0, 1.0);
                     
-                    // Skip center (donut hole)
-                    if (r < 0.1) {
-                        gl_FragColor = vec4(0.0);
-                        return;
-                    }
-                    
-                    // Tunnel UVs: radial depth (1/r for perspective) + angular wrap
+                    // Polar UV mapping for tunnel scrolling (outward from hole)
                     vec2 tunnel_uv;
-                    tunnel_uv.x = fract(0.1 / r + u_scroll_progress_v); // Radial scroll
-                    tunnel_uv.y = fract((theta + u_scroll_progress_h) / 3.1415926535 * 0.5); // Angular scroll (wrap every 360°)
+                    tunnel_uv.x = fract(0.3 / max(r, 0.1) + u_scroll_progress_v); // Radial: faster at edges for depth
+                    tunnel_uv.y = fract((theta + u_scroll_progress_h) / 3.1415926535); // Angular rotation (normalized to [0,1])
                     
-                    // Sample and blend textures
-                    vec2 wrapped_uv_2 = fract(tunnel_uv + 0.5);
-                    vec2 wrapped_uv_3 = fract(tunnel_uv + 0.3);
+                    // Sample texture with wrapped UVs (seamless tiling)
+                    vec4 tunnel_color = texture2D(u_galaxy_2, fract(tunnel_uv));
                     
-                    vec4 color2 = texture2D(u_galaxy_2, wrapped_uv_2);
-                    vec4 color3 = texture2D(u_galaxy_3, wrapped_uv_3);
-                    
-                    float blend_h = smoothstep(0.0, 0.4, mod(tunnel_uv.x, 1.0));
-                    float blend_v = smoothstep(0.0, 0.4, mod(tunnel_uv.y, 1.0));
-                    float blend = (blend_h + blend_v) * 0.3;
-                    
-                    vec4 tunnel_color = mix(color2, color3, clamp(blend, 0.0, 1.0));
-                    
-                    // Fade based on radius (darker near edges, hole in center)
-                    float fade = smoothstep(0.1, 0.9, 1.0 - r); // 1.0 at edge, 0.0 at center
-                    gl_FragColor = tunnel_color * fade;
+                    // Blend hole and tunnel
+                    gl_FragColor = mix(hole_color, tunnel_color, hole_step);
                 }
                 """,
             uniforms: uniformList
         )
+
+        // Log initialization
+        if tunnelShader == nil {
+            print("Error: Tunnel shader failed to initialize")
+        } else {
+            print("Tunnel shader initialized successfully")
+        }
+        let texture2 = SKTexture(imageNamed: "background_2")
+        let texture3 = SKTexture(imageNamed: "background_3")
+        print("Texture background_2 loaded: \(texture2 != nil)")
+        print("Texture background_3 loaded: \(texture3 != nil)")
     }
 
     func getTunnelShader() -> SKShader? {
@@ -73,9 +132,15 @@ class TunnelShaderManager {
 
     func addScrollH(scroll: Float) {
         scrollH.floatValue += scroll
+        print("TunnelShader scrollH: \(scrollH.floatValue)")
     }
 
     func addScrollV(scroll: Float) {
         scrollV.floatValue += scroll
+        print("TunnelShader scrollV: \(scrollV.floatValue)")
+    }
+
+    func currentTunnelOffsets() -> [(Float, Float)] {
+        return [(scrollH.floatValue, scrollV.floatValue)]
     }
 }

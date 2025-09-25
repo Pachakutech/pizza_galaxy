@@ -91,7 +91,8 @@ class GameScene: SKScene, ObservableObject {
         }
         addChild(cameraNode)
 
-        if let backgroundShader = ShaderManager.shared.getGalaxyShader() {
+        ShaderManager.shared.getGalaxyShader()
+        if let backgroundShader = TunnelShaderManager.shared.getTunnelShader() {
             backgroundSprite = SKSpriteNode(color: .white, size: size)
             backgroundSprite?.shader = backgroundShader
             backgroundSprite?.position = CGPoint(x: centerX, y: centerY)
@@ -222,6 +223,8 @@ class GameScene: SKScene, ObservableObject {
         let xScrollOffset = xApparentVelocity / bgScrollSpeed
         ShaderManager.shared.addScrollH(scroll: Float(-xScrollOffset / 1000))
         ShaderManager.shared.addScrollV(scroll: Float(yScrollOffset / 10000))
+        TunnelShaderManager.shared.addScrollH(scroll: Float(-xScrollOffset / 1000))
+        TunnelShaderManager.shared.addScrollV(scroll: Float(yScrollOffset / 10000))
 
         let offsets = ShaderManager.shared.currentGalaxyOffsets()
         var isGalaxyVisible = false
