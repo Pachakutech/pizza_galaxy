@@ -97,4 +97,9 @@ class TunnelShaderManager {
     func isOutOfBounds() -> Bool {
         abs(scrollX.floatValue) > 0.5
     }
+    
+    func reset() {
+        scrollX.floatValue = 0.0
+        scrollZ.floatValue = 0.0
+    }
 }

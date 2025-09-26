@@ -172,7 +172,7 @@ class GameScene: SKScene, ObservableObject {
 
         let xDelta = spaceship.position.x - centerX
         xApparentVelocity =
-            xApparentVelocity * xDamping + xAccDelta + xDelta / 4
+            xApparentVelocity * xDamping + xAccDelta + xDelta
         xApparentVelocity = min(
             max(-maxSpaceshipSpeedX, xApparentVelocity),
             maxSpaceshipSpeedX
@@ -266,29 +266,29 @@ class GameScene: SKScene, ObservableObject {
         } else {
             timeOnGalaxy = 0
         }
-        if timeOnGalaxy > 60 && !tunnelMode{
+        if timeOnGalaxy > 60 && !tunnelMode {
             tunnelMode = !tunnelMode
             beginTunnel()
         }
-//        for (offsetH, offsetV) in offsets {
-//            if abs(offsetH) < 0.01 && abs(offsetV) < 0.01 {
-//                currentLevel += 1
-//                galaxyShaderManager.setGalaxyTexture(forLevel: currentLevel)
-//                let newRandomPeriodsH = Float.random(in: 3...10)
-//                let newRandomPeriodsV = Float.random(in: 3...10)
-//                let newThresholdH =
-//                    galaxyShaderManager.getCumulativeScrollH()
-//                    - newRandomPeriodsH * 1.0
-//                let newThresholdV =
-//                    galaxyShaderManager.getCumulativeScrollV()
-//                    - newRandomPeriodsV * 1.0
-//                galaxyShaderManager.updateAppearanceThreshold(
-//                    newValueH: newThresholdH,
-//                    newValueV: newThresholdV
-//                )
-//                break
-//            }
-//        }
+        //        for (offsetH, offsetV) in offsets {
+        //            if abs(offsetH) < 0.01 && abs(offsetV) < 0.01 {
+        //                currentLevel += 1
+        //                galaxyShaderManager.setGalaxyTexture(forLevel: currentLevel)
+        //                let newRandomPeriodsH = Float.random(in: 3...10)
+        //                let newRandomPeriodsV = Float.random(in: 3...10)
+        //                let newThresholdH =
+        //                    galaxyShaderManager.getCumulativeScrollH()
+        //                    - newRandomPeriodsH * 1.0
+        //                let newThresholdV =
+        //                    galaxyShaderManager.getCumulativeScrollV()
+        //                    - newRandomPeriodsV * 1.0
+        //                galaxyShaderManager.updateAppearanceThreshold(
+        //                    newValueH: newThresholdH,
+        //                    newValueV: newThresholdV
+        //                )
+        //                break
+        //            }
+        //        }
 
         var bodiesToReset: [CelestialBody] = []
         for body in activeBlackHoles + activeStars {
@@ -414,34 +414,40 @@ class GameScene: SKScene, ObservableObject {
 
         spaceshipPosition = spaceship.position
     }
-    
-    let firstTunnelProgram = [500, 800, 800, -200, -1000]
+
+    let firstTunnelProgram = [20, 20, 20, -20, -100]
     private func beginTunnel() {
         // First get inputs to the tunnel shader manager to be near 0.0
         // Then begin moving the ball around
+        tunnelShaderManager.reset()
         backgroundSprite?.shader = tunnelShaderManager.getTunnelShader()
-//        let wait = SKAction.wait(forDuration: 3.0)
-//        backgroundSprite?.run(SKAction.sequence([
-//            
-//            // should not be this, needs to be affecting x forces
-//            SKAction.customAction(withDuration: 3.0) { [self] node, time in
-//                galaxyShaderManager.addRotation(angle: .pi * 2 * Float(time))
-//            }
-//        ]))
-
-    }
-    
-    private func beginFreeNav() {
-         backgroundSprite?.shader = galaxyShaderManager.getGalaxyShader()
-            backgroundSprite?.run(
-                SKAction.customAction(withDuration: 2.0) { [self] node, time in
-                    galaxyShaderManager.addRotation(
-                        angle: .pi * 2 * Float(time)
-                    )
+        let wait = SKAction.wait(forDuration: 2.0)
+        backgroundSprite?.run(
+            SKAction.sequence(
+                firstTunnelProgram.flatMap { force in
+                    [
+                        wait,
+                        SKAction.customAction(withDuration: 3.0) {
+                            [self] node, time in xAccDelta += CGFloat(force)
+                        },
+                    ]
                 }
             )
+        )
+
     }
-    
+
+    private func beginFreeNav() {
+        backgroundSprite?.shader = galaxyShaderManager.getGalaxyShader()
+        backgroundSprite?.run(
+            SKAction.customAction(withDuration: 2.0) { [self] node, time in
+                galaxyShaderManager.addRotation(
+                    angle: .pi * 2 * Float(time)
+                )
+            }
+        )
+    }
+
     private func startOrbitAnimation(for blackHole: BlackHole) {
         isAnimatingOrbit = true
         animatingBlackHole = blackHole
