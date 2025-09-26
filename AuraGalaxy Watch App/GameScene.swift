@@ -218,7 +218,7 @@ class GameScene: SKScene, ObservableObject {
         galaxyShaderManager.addScrollV(scroll: Float(yScrollOffset / 10000))
         tunnelShaderManager.addScrollX(scroll: Float(xScrollOffset / 1000))
         tunnelShaderManager.addScrollZ(scroll: Float(zSpeedAvg / 100))
-        tunnelShaderManager.addScrollRotate(scroll: Float(xDelta / 1000))
+        tunnelShaderManager.addScrollRotate(scroll: Float(xDelta / 500))
         if tunnelShaderManager.isOutOfBounds() && tunnelMode {
             tunnelMode = false
             beginFreeNav()
@@ -493,7 +493,7 @@ class GameScene: SKScene, ObservableObject {
         }
         backgroundSprite?.run(
             SKAction.customAction(withDuration: 3.0) { [self] node, time in
-                galaxyShaderManager.addRotation(angle: .pi * 2 * Float(time))
+                galaxyShaderManager.addRotation(angle: .pi * 2 * Float(time/3))
             }
         )
         applyEndForce(to: blackHole)
