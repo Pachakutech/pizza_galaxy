@@ -184,7 +184,7 @@ class GameScene: SKScene, ObservableObject {
             max(-maxSpaceshipSpeedX, xApparentVelocity),
             maxSpaceshipSpeedX
         )
-        xAccDelta = 0.0
+        xAccDelta *= 0.6
         let newX = min(
             max(size.width * 0.1, spaceship.position.x + CGFloat(crownDelta)),
             size.width * 0.9
@@ -225,7 +225,7 @@ class GameScene: SKScene, ObservableObject {
         ShaderManager.shared.addScrollV(scroll: Float(yScrollOffset / 10000))
         TunnelShaderManager.shared.addScrollX(scroll: Float(xScrollOffset / 1000))
         TunnelShaderManager.shared.addScrollZ(scroll: Float(zSpeedAvg / 100))
-        TunnelShaderManager.shared.addScrollRotate(scroll: Float(xDelta / 500))
+        TunnelShaderManager.shared.addScrollRotate(scroll: Float(xDelta / 1000))
 
         let offsets = ShaderManager.shared.currentGalaxyOffsets()
         var isGalaxyVisible = false
