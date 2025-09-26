@@ -216,7 +216,7 @@ class GameScene: SKScene, ObservableObject {
         let xScrollOffset = xApparentVelocity / bgScrollSpeed
         galaxyShaderManager.addScrollH(scroll: Float(-xScrollOffset / 1000))
         galaxyShaderManager.addScrollV(scroll: Float(yScrollOffset / 10000))
-        tunnelShaderManager.addScrollX(scroll: Float(xScrollOffset / 1000))
+        tunnelShaderManager.addScrollX(scroll: Float(-xScrollOffset / 1000))
         tunnelShaderManager.addScrollZ(scroll: Float(zSpeedAvg / 100))
         tunnelShaderManager.addScrollRotate(scroll: Float(xDelta / 500))
         if tunnelShaderManager.isOutOfBounds() && tunnelMode {
