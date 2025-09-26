@@ -62,7 +62,7 @@ class GameScene: SKScene, ObservableObject {
     private var centerY: CGFloat { size.height / 2 }
     private let tunnelShaderManager = TunnelShaderManager()
     private let galaxyShaderManager = GalaxyShaderManager()
-    private var tunnelMode = true
+    private var tunnelMode = false
     private var timeOnGalaxy = 0
 
     override init(size: CGSize) {
