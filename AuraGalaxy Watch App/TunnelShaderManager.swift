@@ -34,20 +34,20 @@ class TunnelShaderManager {
                     float r = length(uv); // Radial distance from shifted center
                     float theta = atan(uv.y, uv.x); // Angle from shifted center
                     
-                    // Donut hole (black center for r < 0.1)
-                    float hole_step = step(0.1, r); // 0 in hole, 1 in tunnel
-                    vec4 hole_color = texture2D(u_background, v_tex_coord);
+                    // Donut hole and annulus (r < 0.1 is hole, 0.1 <= r < 0.2 is gradient)
+                    float hole_alpha = smoothstep(0.1, 0.2, r); // 0 at r=0.1, 1 at r=0.2
+                    vec4 hole_color = texture2D(u_background, v_tex_coord); // Background texture
                     
                     // Polar UV mapping for tunnel scrolling (outward from hole)
                     vec2 tunnel_uv;
                     tunnel_uv.x = fract(0.3 / max(r, 0.1) + u_scroll_progress_z); // Radial: faster at edges for depth
                     tunnel_uv.y = fract((theta + u_scroll_progress_rotate) / 3.1415926535); // Angular rotation (normalized to [0,1])
                     
-                    // Sample texture with wrapped UVs (seamless tiling)
+                    // Sample tunnel texture with wrapped UVs (seamless tiling)
                     vec4 tunnel_color = texture2D(u_galaxy_2, fract(tunnel_uv));
                     
-                    // Blend hole and tunnel
-                    gl_FragColor = mix(hole_color, tunnel_color, hole_step);
+                    // Blend hole (background) and tunnel with alpha gradient
+                    gl_FragColor = mix(hole_color, tunnel_color, hole_alpha);
                 }
                 """,
             uniforms: [
