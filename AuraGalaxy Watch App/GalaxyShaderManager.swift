@@ -1,5 +1,5 @@
 //
-//  ShaderManager.swift
+//  GalaxyShaderManager.swift
 //  AuraGalaxy
 //
 //  Created by Pachakutech on 9/9/25.
@@ -9,7 +9,7 @@ import SpriteKit
 
 class GalaxyShaderManager {
     static let shared = GalaxyShaderManager()
-    private var galaxyShader: SKShader?
+    private let galaxyShader: SKShader
     private var scrollH = SKUniform(name: "u_scroll_progress_h", float: 0.0)
     private var scrollV = SKUniform(name: "u_scroll_progress_v", float: 0.0)
     private var rotationAngle = SKUniform(name: "u_rotation", float: 0.0)
@@ -24,7 +24,7 @@ class GalaxyShaderManager {
     private let repetitionPeriod: Float = 8.0
     private let initialOffset: Float = 3.0
 
-    private init() {
+    init() {
         let randomNumPeriodsH = Float.random(in: 3...10)
         let randomNumPeriodsV = Float.random(in: 3...10)
         appearanceThresholdH = -randomNumPeriodsH * tilePeriod
@@ -40,12 +40,16 @@ class GalaxyShaderManager {
 
         centerAlignmentValue = initialOffset / speedMultiplier
 
+        let galaxyTexture = SKTexture(imageNamed: "background_level_1")
         galaxyTextureUniform = SKUniform(
             name: "u_galaxy_1",
-            texture: SKTexture(imageNamed: "background_level_1")
+            texture: galaxyTexture
         )
 
-        
+        let galaxyTexture2 = SKTexture(imageNamed: "background_2")
+
+        let galaxyTexture3 = SKTexture(imageNamed: "background_3")
+
         galaxyShader = SKShader(
             source: """
                 void main() {
@@ -93,25 +97,28 @@ class GalaxyShaderManager {
                 }
                 """,
             uniforms: [
-            galaxyTextureUniform,
-            SKUniform(
-                name: "u_galaxy_2",
-                texture: SKTexture(imageNamed: "background_2")
-            ),
-            SKUniform(
-                name: "u_galaxy_3",
-                texture: SKTexture(imageNamed: "background_3")
-            ),
-            scrollH,
-            scrollV,
-            appearanceUniformH,
-            appearanceUniformV,
-            rotationAngle
-        ]
-)
+                galaxyTextureUniform,
+                SKUniform(
+                    name: "u_galaxy_2",
+                    texture: galaxyTexture2
+                ),
+                SKUniform(
+                    name: "u_galaxy_3",
+                    texture: galaxyTexture3
+                ),
+                scrollH,
+                scrollV,
+                appearanceUniformH,
+                appearanceUniformV,
+                rotationAngle
+            ]
+        )
+
+        // Log initialization
+        print("Galaxy shader initialized successfully")
     }
 
-    func getGalaxyShader() -> SKShader? {
+    func getGalaxyShader() -> SKShader {
         return galaxyShader
     }
 
@@ -133,7 +140,8 @@ class GalaxyShaderManager {
 
     func setGalaxyTexture(forLevel level: Int) {
         let textureName = "background_level_\(level)"
-        galaxyTextureUniform.textureValue = SKTexture(imageNamed: textureName)
+        let texture = SKTexture(imageNamed: textureName)
+        galaxyTextureUniform.textureValue = texture
     }
 
     func updateAppearanceThreshold(newValueH: Float, newValueV: Float) {

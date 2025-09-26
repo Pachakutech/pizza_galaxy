@@ -55,17 +55,14 @@ class GameScene: SKScene, ObservableObject {
     private var backgroundSprite: SKSpriteNode?
     private var rainbowEffect: SKEmitterNode?
     private var currentLevel = 1
-    private var appearanceThresholdH: Float = GalaxyShaderManager.shared
-        .appearanceThresholdH
-    private var appearanceThresholdV: Float = GalaxyShaderManager.shared
-        .appearanceThresholdV
-    private var centerAlignmentValue: Float = GalaxyShaderManager.shared
-        .centerAlignmentValue
     private let maxCelestialBodies = 34
     private let blackHoleProbability = 0.2
     private var yMaxOffset: CGFloat { backgroundHeight - 2.2 * size.height }
     private var centerX: CGFloat { size.width / 2 }
     private var centerY: CGFloat { size.height / 2 }
+    private let tunnelShaderManager = TunnelShaderManager()
+    private let galaxyShaderManager = GalaxyShaderManager()
+    private var tunnelMode = true
 
     override init(size: CGSize) {
         super.init(size: size)
@@ -91,16 +88,11 @@ class GameScene: SKScene, ObservableObject {
         }
         addChild(cameraNode)
 
-        GalaxyShaderManager.shared.getGalaxyShader()
-        if let backgroundShader = TunnelShaderManager.shared.getTunnelShader() {
-            backgroundSprite = SKSpriteNode(color: .white, size: size)
-            backgroundSprite?.shader = backgroundShader
-            backgroundSprite?.position = CGPoint(x: centerX, y: centerY)
-            backgroundSprite?.zPosition = -3
-            addChild(backgroundSprite!)
-        } else {
-            print("Error: SKShader initialization failed.")
-        }
+        backgroundSprite = SKSpriteNode(color: .white, size: size)
+        backgroundSprite?.shader = tunnelShaderManager.getTunnelShader()
+        backgroundSprite?.position = CGPoint(x: centerX, y: centerY)
+        backgroundSprite?.zPosition = -3
+        addChild(backgroundSprite!)
 
         if let emitter = SKEmitterNode(fileNamed: "rainbow.sks") {
             rainbowEffect = emitter
@@ -221,13 +213,22 @@ class GameScene: SKScene, ObservableObject {
 
         let yScrollOffset = min(max(-yMaxOffset, yOffset), yMaxOffset)
         let xScrollOffset = xApparentVelocity / bgScrollSpeed
-        GalaxyShaderManager.shared.addScrollH(scroll: Float(-xScrollOffset / 1000))
-        GalaxyShaderManager.shared.addScrollV(scroll: Float(yScrollOffset / 10000))
-        TunnelShaderManager.shared.addScrollX(scroll: Float(xScrollOffset / 1000))
-        TunnelShaderManager.shared.addScrollZ(scroll: Float(zSpeedAvg / 100))
-        TunnelShaderManager.shared.addScrollRotate(scroll: Float(xDelta / 1000))
+        galaxyShaderManager.addScrollH(scroll: Float(-xScrollOffset / 1000))
+        galaxyShaderManager.addScrollV(scroll: Float(yScrollOffset / 10000))
+        tunnelShaderManager.addScrollX(scroll: Float(xScrollOffset / 1000))
+        tunnelShaderManager.addScrollZ(scroll: Float(zSpeedAvg / 100))
+        tunnelShaderManager.addScrollRotate(scroll: Float(xDelta / 1000))
+        if tunnelShaderManager.isOutOfBounds() && tunnelMode {
+            tunnelMode = false
+            backgroundSprite?.shader = galaxyShaderManager.getGalaxyShader()
+            backgroundSprite?.run(
+                SKAction.customAction(withDuration: 2.0) { [self] node, time in
+                    galaxyShaderManager.addRotation(angle: .pi * 2 * Float(time))
+                }
+            )
+        }
 
-        let offsets = GalaxyShaderManager.shared.currentGalaxyOffsets()
+        let offsets = galaxyShaderManager.currentGalaxyOffsets()
         var isGalaxyVisible = false
         var closestOffset: (Float, Float)? = nil
         var minDistance: Float = .greatestFiniteMagnitude
@@ -267,21 +268,19 @@ class GameScene: SKScene, ObservableObject {
         for (offsetH, offsetV) in offsets {
             if abs(offsetH) < 0.01 && abs(offsetV) < 0.01 {
                 currentLevel += 1
-                GalaxyShaderManager.shared.setGalaxyTexture(forLevel: currentLevel)
+                galaxyShaderManager.setGalaxyTexture(forLevel: currentLevel)
                 let newRandomPeriodsH = Float.random(in: 3...10)
                 let newRandomPeriodsV = Float.random(in: 3...10)
                 let newThresholdH =
-                    GalaxyShaderManager.shared.getCumulativeScrollH()
+                    galaxyShaderManager.getCumulativeScrollH()
                     - newRandomPeriodsH * 1.0
                 let newThresholdV =
-                    GalaxyShaderManager.shared.getCumulativeScrollV()
+                    galaxyShaderManager.getCumulativeScrollV()
                     - newRandomPeriodsV * 1.0
-                GalaxyShaderManager.shared.updateAppearanceThreshold(
+                galaxyShaderManager.updateAppearanceThreshold(
                     newValueH: newThresholdH,
                     newValueV: newThresholdV
                 )
-                appearanceThresholdH = newThresholdH
-                appearanceThresholdV = newThresholdV
                 break
             }
         }
@@ -449,8 +448,8 @@ class GameScene: SKScene, ObservableObject {
             body.changeFace(to: "silly_face")
         }
         backgroundSprite?.run(
-            SKAction.customAction(withDuration: 3.0) { node, time in
-                GalaxyShaderManager.shared.addRotation(angle: .pi * 2 * Float(time))
+            SKAction.customAction(withDuration: 3.0) { [self] node, time in
+                galaxyShaderManager.addRotation(angle: .pi * 2 * Float(time))
             }
         )
         applyEndForce(to: blackHole)

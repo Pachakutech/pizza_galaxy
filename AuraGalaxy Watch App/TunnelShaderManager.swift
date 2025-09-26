@@ -1,18 +1,24 @@
+//
+//  TunnelShaderManager.swift
+//  AuraGalaxy
+//
+//  Created by Pachakutech on 9/10/25.
+//
+
 import SpriteKit
 
 class TunnelShaderManager {
     static let shared = TunnelShaderManager()
-    private var tunnelShader: SKShader?
+    private let tunnelShader: SKShader
     private var scrollRotate = SKUniform(name: "u_scroll_progress_rotate", float: 0.0)
     private var scrollZ = SKUniform(name: "u_scroll_progress_z", float: 0.0)
     private var scrollX = SKUniform(name: "u_scroll_progress_x", float: 0.0)
 
-    private init() {
+    init() {
+        let texture2 = SKTexture(imageNamed: "background_2")
+
         let uniformList = [
-            SKUniform(
-                name: "u_galaxy_2",
-                texture: SKTexture(imageNamed: "background_2")
-            ),
+            SKUniform(name: "u_galaxy_2", texture: texture2),
             scrollRotate,
             scrollZ,
             scrollX
@@ -46,18 +52,11 @@ class TunnelShaderManager {
         )
 
         // Log initialization
-        if tunnelShader == nil {
-            print("Error: Tunnel shader failed to initialize")
-        } else {
-            print("Tunnel shader initialized successfully")
-        }
-        let texture2 = SKTexture(imageNamed: "background_2")
+        print("Tunnel shader initialized successfully")
         let texture3 = SKTexture(imageNamed: "background_3")
-        print("Texture background_2 loaded: \(texture2 != nil)")
-        print("Texture background_3 loaded: \(texture3 != nil)")
     }
 
-    func getTunnelShader() -> SKShader? {
+    func getTunnelShader() -> SKShader {
         return tunnelShader
     }
 
@@ -78,5 +77,9 @@ class TunnelShaderManager {
 
     func currentTunnelOffsets() -> [(Float, Float, Float)] {
         return [(scrollRotate.floatValue, scrollZ.floatValue, scrollX.floatValue)]
+    }
+    
+    func isOutOfBounds() -> Bool {
+        abs(scrollX.floatValue) > 0.5
     }
 }
