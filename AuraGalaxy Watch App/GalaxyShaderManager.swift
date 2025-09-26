@@ -110,7 +110,7 @@ class GalaxyShaderManager {
                 scrollV,
                 appearanceUniformH,
                 appearanceUniformV,
-                rotationAngle
+                rotationAngle,
             ]
         )
 

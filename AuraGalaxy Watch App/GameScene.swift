@@ -63,6 +63,7 @@ class GameScene: SKScene, ObservableObject {
     private let tunnelShaderManager = TunnelShaderManager()
     private let galaxyShaderManager = GalaxyShaderManager()
     private var tunnelMode = true
+    private var timeOnGalaxy = 0
 
     override init(size: CGSize) {
         super.init(size: size)
@@ -223,7 +224,9 @@ class GameScene: SKScene, ObservableObject {
             backgroundSprite?.shader = galaxyShaderManager.getGalaxyShader()
             backgroundSprite?.run(
                 SKAction.customAction(withDuration: 2.0) { [self] node, time in
-                    galaxyShaderManager.addRotation(angle: .pi * 2 * Float(time))
+                    galaxyShaderManager.addRotation(
+                        angle: .pi * 2 * Float(time)
+                    )
                 }
             )
         }
@@ -232,7 +235,7 @@ class GameScene: SKScene, ObservableObject {
         var isGalaxyVisible = false
         var closestOffset: (Float, Float)? = nil
         var minDistance: Float = .greatestFiniteMagnitude
-        
+
         for (offsetH, offsetV) in offsets {
             if abs(offsetH) <= 0.5 && abs(offsetV) <= 0.5 {
                 isGalaxyVisible = true
@@ -265,25 +268,34 @@ class GameScene: SKScene, ObservableObject {
             }
         }
 
-        for (offsetH, offsetV) in offsets {
-            if abs(offsetH) < 0.01 && abs(offsetV) < 0.01 {
-                currentLevel += 1
-                galaxyShaderManager.setGalaxyTexture(forLevel: currentLevel)
-                let newRandomPeriodsH = Float.random(in: 3...10)
-                let newRandomPeriodsV = Float.random(in: 3...10)
-                let newThresholdH =
-                    galaxyShaderManager.getCumulativeScrollH()
-                    - newRandomPeriodsH * 1.0
-                let newThresholdV =
-                    galaxyShaderManager.getCumulativeScrollV()
-                    - newRandomPeriodsV * 1.0
-                galaxyShaderManager.updateAppearanceThreshold(
-                    newValueH: newThresholdH,
-                    newValueV: newThresholdV
-                )
-                break
-            }
+        if isGalaxyVisible {
+            timeOnGalaxy += 1
+        } else {
+            timeOnGalaxy = 0
         }
+        if timeOnGalaxy > 60 && !tunnelMode{
+            tunnelMode = !tunnelMode
+            backgroundSprite?.shader = tunnelShaderManager.getTunnelShader()
+        }
+//        for (offsetH, offsetV) in offsets {
+//            if abs(offsetH) < 0.01 && abs(offsetV) < 0.01 {
+//                currentLevel += 1
+//                galaxyShaderManager.setGalaxyTexture(forLevel: currentLevel)
+//                let newRandomPeriodsH = Float.random(in: 3...10)
+//                let newRandomPeriodsV = Float.random(in: 3...10)
+//                let newThresholdH =
+//                    galaxyShaderManager.getCumulativeScrollH()
+//                    - newRandomPeriodsH * 1.0
+//                let newThresholdV =
+//                    galaxyShaderManager.getCumulativeScrollV()
+//                    - newRandomPeriodsV * 1.0
+//                galaxyShaderManager.updateAppearanceThreshold(
+//                    newValueH: newThresholdH,
+//                    newValueV: newThresholdV
+//                )
+//                break
+//            }
+//        }
 
         var bodiesToReset: [CelestialBody] = []
         for body in activeBlackHoles + activeStars {
