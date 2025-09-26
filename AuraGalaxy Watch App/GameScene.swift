@@ -184,6 +184,7 @@ class GameScene: SKScene, ObservableObject {
             max(-maxSpaceshipSpeedX, xApparentVelocity),
             maxSpaceshipSpeedX
         )
+        xAccDelta = 0.0
         let newX = min(
             max(size.width * 0.1, spaceship.position.x + CGFloat(crownDelta)),
             size.width * 0.9
@@ -195,7 +196,6 @@ class GameScene: SKScene, ObservableObject {
         let newY = parabola + baseline
         spaceship.position = CGPoint(x: newX, y: newY)
         spaceship.zRotation = CGFloat(xDelta / 128)
-        xAccDelta = 0.0
         spaceshipPosition = spaceship.position
         let xCelestialOffset = -xApparentVelocity * celestialScrollSpeedFactor
         crownDelta = 0
@@ -223,8 +223,9 @@ class GameScene: SKScene, ObservableObject {
         let xScrollOffset = xApparentVelocity / bgScrollSpeed
         ShaderManager.shared.addScrollH(scroll: Float(-xScrollOffset / 1000))
         ShaderManager.shared.addScrollV(scroll: Float(yScrollOffset / 10000))
-        TunnelShaderManager.shared.addScrollH(scroll: Float(-xScrollOffset / 1000))
-        TunnelShaderManager.shared.addScrollV(scroll: Float(yScrollOffset / 10000))
+        TunnelShaderManager.shared.addScrollX(scroll: Float(xScrollOffset / 1000))
+        TunnelShaderManager.shared.addScrollZ(scroll: Float(zSpeedAvg / 100))
+        TunnelShaderManager.shared.addScrollRotate(scroll: Float(xDelta / 500))
 
         let offsets = ShaderManager.shared.currentGalaxyOffsets()
         var isGalaxyVisible = false
