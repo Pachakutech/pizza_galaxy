@@ -7,8 +7,8 @@
 
 import SpriteKit
 
-class ShaderManager {
-    static let shared = ShaderManager()
+class GalaxyShaderManager {
+    static let shared = GalaxyShaderManager()
     private var galaxyShader: SKShader?
     private var scrollH = SKUniform(name: "u_scroll_progress_h", float: 0.0)
     private var scrollV = SKUniform(name: "u_scroll_progress_v", float: 0.0)

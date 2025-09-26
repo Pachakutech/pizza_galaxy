@@ -55,11 +55,11 @@ class GameScene: SKScene, ObservableObject {
     private var backgroundSprite: SKSpriteNode?
     private var rainbowEffect: SKEmitterNode?
     private var currentLevel = 1
-    private var appearanceThresholdH: Float = ShaderManager.shared
+    private var appearanceThresholdH: Float = GalaxyShaderManager.shared
         .appearanceThresholdH
-    private var appearanceThresholdV: Float = ShaderManager.shared
+    private var appearanceThresholdV: Float = GalaxyShaderManager.shared
         .appearanceThresholdV
-    private var centerAlignmentValue: Float = ShaderManager.shared
+    private var centerAlignmentValue: Float = GalaxyShaderManager.shared
         .centerAlignmentValue
     private let maxCelestialBodies = 34
     private let blackHoleProbability = 0.2
@@ -91,7 +91,7 @@ class GameScene: SKScene, ObservableObject {
         }
         addChild(cameraNode)
 
-        ShaderManager.shared.getGalaxyShader()
+        GalaxyShaderManager.shared.getGalaxyShader()
         if let backgroundShader = TunnelShaderManager.shared.getTunnelShader() {
             backgroundSprite = SKSpriteNode(color: .white, size: size)
             backgroundSprite?.shader = backgroundShader
@@ -221,13 +221,13 @@ class GameScene: SKScene, ObservableObject {
 
         let yScrollOffset = min(max(-yMaxOffset, yOffset), yMaxOffset)
         let xScrollOffset = xApparentVelocity / bgScrollSpeed
-        ShaderManager.shared.addScrollH(scroll: Float(-xScrollOffset / 1000))
-        ShaderManager.shared.addScrollV(scroll: Float(yScrollOffset / 10000))
+        GalaxyShaderManager.shared.addScrollH(scroll: Float(-xScrollOffset / 1000))
+        GalaxyShaderManager.shared.addScrollV(scroll: Float(yScrollOffset / 10000))
         TunnelShaderManager.shared.addScrollX(scroll: Float(xScrollOffset / 1000))
         TunnelShaderManager.shared.addScrollZ(scroll: Float(zSpeedAvg / 100))
         TunnelShaderManager.shared.addScrollRotate(scroll: Float(xDelta / 1000))
 
-        let offsets = ShaderManager.shared.currentGalaxyOffsets()
+        let offsets = GalaxyShaderManager.shared.currentGalaxyOffsets()
         var isGalaxyVisible = false
         var closestOffset: (Float, Float)? = nil
         var minDistance: Float = .greatestFiniteMagnitude
@@ -267,16 +267,16 @@ class GameScene: SKScene, ObservableObject {
         for (offsetH, offsetV) in offsets {
             if abs(offsetH) < 0.01 && abs(offsetV) < 0.01 {
                 currentLevel += 1
-                ShaderManager.shared.setGalaxyTexture(forLevel: currentLevel)
+                GalaxyShaderManager.shared.setGalaxyTexture(forLevel: currentLevel)
                 let newRandomPeriodsH = Float.random(in: 3...10)
                 let newRandomPeriodsV = Float.random(in: 3...10)
                 let newThresholdH =
-                    ShaderManager.shared.getCumulativeScrollH()
+                    GalaxyShaderManager.shared.getCumulativeScrollH()
                     - newRandomPeriodsH * 1.0
                 let newThresholdV =
-                    ShaderManager.shared.getCumulativeScrollV()
+                    GalaxyShaderManager.shared.getCumulativeScrollV()
                     - newRandomPeriodsV * 1.0
-                ShaderManager.shared.updateAppearanceThreshold(
+                GalaxyShaderManager.shared.updateAppearanceThreshold(
                     newValueH: newThresholdH,
                     newValueV: newThresholdV
                 )
@@ -450,7 +450,7 @@ class GameScene: SKScene, ObservableObject {
         }
         backgroundSprite?.run(
             SKAction.customAction(withDuration: 3.0) { node, time in
-                ShaderManager.shared.addRotation(angle: .pi * 2 * Float(time))
+                GalaxyShaderManager.shared.addRotation(angle: .pi * 2 * Float(time))
             }
         )
         applyEndForce(to: blackHole)
