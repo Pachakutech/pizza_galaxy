@@ -5,6 +5,12 @@
 //  Created by Pachakutech on 9/9/25.
 //
 
+//  GalaxyShaderManager.swift
+//  AuraGalaxy
+//
+//  Created by Pachakutech on 9/9/25.
+//
+
 import SpriteKit
 
 class GalaxyShaderManager {
@@ -13,9 +19,10 @@ class GalaxyShaderManager {
     private var scrollH = SKUniform(name: "u_scroll_progress_h", float: 0.0)
     private var scrollV = SKUniform(name: "u_scroll_progress_v", float: 0.0)
     private var rotationAngle = SKUniform(name: "u_rotation", float: 0.0)
-    private var galaxyTextureUniform: SKUniform!
-    private var appearanceUniformH: SKUniform!
-    private var appearanceUniformV: SKUniform!
+    private var galaxy1Alpha = SKUniform(name: "u_galaxy1_alpha", float: 1.0)
+    private var galaxyTextureUniform: SKUniform
+    private var appearanceUniformH: SKUniform
+    private var appearanceUniformV: SKUniform
     private(set) var appearanceThresholdH: Float = 0.0
     private(set) var appearanceThresholdV: Float = 0.0
     private(set) var centerAlignmentValue: Float = 0.0
@@ -41,14 +48,35 @@ class GalaxyShaderManager {
         centerAlignmentValue = initialOffset / speedMultiplier
 
         let galaxyTexture = SKTexture(imageNamed: "background_level_1")
+        guard galaxyTexture != nil else {
+            fatalError("Failed to load texture background_level_1")
+        }
         galaxyTextureUniform = SKUniform(
             name: "u_galaxy_1",
             texture: galaxyTexture
         )
 
         let galaxyTexture2 = SKTexture(imageNamed: "background_2")
+        guard galaxyTexture2 != nil else {
+            fatalError("Failed to load texture background_2")
+        }
 
         let galaxyTexture3 = SKTexture(imageNamed: "background_3")
+        guard galaxyTexture3 != nil else {
+            fatalError("Failed to load texture background_3")
+        }
+
+        let uniformList = [
+            galaxyTextureUniform,
+            SKUniform(name: "u_galaxy_2", texture: galaxyTexture2),
+            SKUniform(name: "u_galaxy_3", texture: galaxyTexture3),
+            scrollH,
+            scrollV,
+            appearanceUniformH,
+            appearanceUniformV,
+            rotationAngle,
+            galaxy1Alpha
+        ]
 
         galaxyShader = SKShader(
             source: """
@@ -64,12 +92,18 @@ class GalaxyShaderManager {
                     );
                     uv += 0.5;
 
-                    // Non-rotated UVs for u_galaxy_1 (same as original)
+                    // Rotated and scrolled UVs for u_galaxy_1 (spinning with tiling support)
                     float local_scroll_h = mod(u_scroll_progress_h - u_appearance_threshold_h, \(repetitionPeriod));
                     float local_scroll_v = mod(u_scroll_progress_v - u_appearance_threshold_v, \(repetitionPeriod));
                     vec2 uv_1 = v_tex_coord;
                     uv_1.x += local_scroll_h - \(initialOffset);
                     uv_1.y += local_scroll_v - \(initialOffset);
+                    uv_1 -= 0.5;
+                    uv_1 = vec2(
+                        uv_1.x * cos(u_rotation) - uv_1.y * sin(u_rotation),
+                        uv_1.x * sin(u_rotation) + uv_1.y * cos(u_rotation)
+                    );
+                    uv_1 += 0.5;
 
                     vec4 color1 = vec4(0.0);
                     float alpha1 = 0.0;
@@ -78,7 +112,7 @@ class GalaxyShaderManager {
                         color1 = texture2D(u_galaxy_1, uv_1);
                         float edge_h = min(smoothstep(0.0, 0.2, uv_1.x), smoothstep(1.0, 0.8, uv_1.x));
                         float edge_v = min(smoothstep(0.0, 0.2, uv_1.y), smoothstep(1.0, 0.8, uv_1.y));
-                        alpha1 = edge_h * edge_v * color1.a;
+                        alpha1 = edge_h * edge_v * color1.a * u_galaxy1_alpha;
                     }
 
                     // Tiled backgrounds using rotated UVs
@@ -96,26 +130,14 @@ class GalaxyShaderManager {
                     gl_FragColor = mix(bg_color, color1, clamp(alpha1 * 0.7, 0.0, 1.0));
                 }
                 """,
-            uniforms: [
-                galaxyTextureUniform,
-                SKUniform(
-                    name: "u_galaxy_2",
-                    texture: galaxyTexture2
-                ),
-                SKUniform(
-                    name: "u_galaxy_3",
-                    texture: galaxyTexture3
-                ),
-                scrollH,
-                scrollV,
-                appearanceUniformH,
-                appearanceUniformV,
-                rotationAngle,
-            ]
+            uniforms: uniformList
         )
 
         // Log initialization
         print("Galaxy shader initialized successfully")
+        print("Texture background_level_1 loaded: \(galaxyTexture != nil)")
+        print("Texture background_2 loaded: \(galaxyTexture2 != nil)")
+        print("Texture background_3 loaded: \(galaxyTexture3 != nil)")
     }
 
     func getGalaxyShader() -> SKShader {
@@ -136,6 +158,11 @@ class GalaxyShaderManager {
 
     func setRotation(angle: Float) {
         rotationAngle.floatValue = angle
+    }
+
+    func setGalaxy1Alpha(alpha: Float) {
+        galaxy1Alpha.floatValue = alpha
+        print("GalaxyShader galaxy1Alpha: \(galaxy1Alpha.floatValue)")
     }
 
     func setGalaxyTexture(forLevel level: Int) {
