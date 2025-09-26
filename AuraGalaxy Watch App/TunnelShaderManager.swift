@@ -10,19 +10,21 @@ import SpriteKit
 class TunnelShaderManager {
     static let shared = TunnelShaderManager()
     private let tunnelShader: SKShader
-    private var scrollRotate = SKUniform(name: "u_scroll_progress_rotate", float: 0.0)
+    private var scrollRotate = SKUniform(
+        name: "u_scroll_progress_rotate",
+        float: 0.0
+    )
     private var scrollZ = SKUniform(name: "u_scroll_progress_z", float: 0.0)
     private var scrollX = SKUniform(name: "u_scroll_progress_x", float: 0.0)
+    private var galaxyTextureUniform: SKUniform!
 
     init() {
         let texture2 = SKTexture(imageNamed: "background_2")
-
-        let uniformList = [
-            SKUniform(name: "u_galaxy_2", texture: texture2),
-            scrollRotate,
-            scrollZ,
-            scrollX
-        ]
+        let galaxyTexture = SKTexture(imageNamed: "background_level_1")
+        galaxyTextureUniform = SKUniform(
+            name: "u_background",
+            texture: galaxyTexture
+        )
 
         tunnelShader = SKShader(
             source: """
@@ -34,7 +36,7 @@ class TunnelShaderManager {
                     
                     // Donut hole (black center for r < 0.1)
                     float hole_step = step(0.1, r); // 0 in hole, 1 in tunnel
-                    vec4 hole_color = vec4(0.0, 0.0, 0.0, 1.0);
+                    vec4 hole_color = texture2D(u_background, v_tex_coord);
                     
                     // Polar UV mapping for tunnel scrolling (outward from hole)
                     vec2 tunnel_uv;
@@ -48,16 +50,27 @@ class TunnelShaderManager {
                     gl_FragColor = mix(hole_color, tunnel_color, hole_step);
                 }
                 """,
-            uniforms: uniformList
+            uniforms: [
+                galaxyTextureUniform,
+                SKUniform(name: "u_galaxy_2", texture: texture2),
+                scrollRotate,
+                scrollZ,
+                scrollX,
+            ]
         )
 
         // Log initialization
         print("Tunnel shader initialized successfully")
-        let texture3 = SKTexture(imageNamed: "background_3")
     }
 
     func getTunnelShader() -> SKShader {
         return tunnelShader
+    }
+
+    func setGalaxyTexture(forLevel level: Int) {
+        let textureName = "background_level_\(level)"
+        let texture = SKTexture(imageNamed: textureName)
+        galaxyTextureUniform.textureValue = texture
     }
 
     func addScrollRotate(scroll: Float) {
@@ -76,9 +89,11 @@ class TunnelShaderManager {
     }
 
     func currentTunnelOffsets() -> [(Float, Float, Float)] {
-        return [(scrollRotate.floatValue, scrollZ.floatValue, scrollX.floatValue)]
+        return [
+            (scrollRotate.floatValue, scrollZ.floatValue, scrollX.floatValue)
+        ]
     }
-    
+
     func isOutOfBounds() -> Bool {
         abs(scrollX.floatValue) > 0.5
     }

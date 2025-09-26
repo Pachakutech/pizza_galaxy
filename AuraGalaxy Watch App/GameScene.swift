@@ -275,7 +275,7 @@ class GameScene: SKScene, ObservableObject {
         }
         if timeOnGalaxy > 60 && !tunnelMode{
             tunnelMode = !tunnelMode
-            backgroundSprite?.shader = tunnelShaderManager.getTunnelShader()
+            beginTunnel()
         }
 //        for (offsetH, offsetV) in offsets {
 //            if abs(offsetH) < 0.01 && abs(offsetV) < 0.01 {
@@ -421,7 +421,14 @@ class GameScene: SKScene, ObservableObject {
 
         spaceshipPosition = spaceship.position
     }
-
+    
+    private func beginTunnel() {
+        // First get inputs to the tunnel shader manager to be near 0.0
+        // Then begin moving the ball around
+        backgroundSprite?.shader = tunnelShaderManager.getTunnelShader()
+        
+    }
+    
     private func startOrbitAnimation(for blackHole: BlackHole) {
         isAnimatingOrbit = true
         animatingBlackHole = blackHole
