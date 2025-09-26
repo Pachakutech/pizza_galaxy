@@ -28,8 +28,8 @@ class GalaxyShaderManager {
     private(set) var centerAlignmentValue: Float = 0.0
     private let tilePeriod: Float = 1.0
     private let speedMultiplier: Float = 1.0
-    private let repetitionPeriod: Float = 8.0
-    private let initialOffset: Float = 3.0
+    private let repetitionPeriod: Float = 4.0
+    private let initialOffset: Float = 2.0
 
     init() {
         let randomNumPeriodsH = Float.random(in: 3...10)
