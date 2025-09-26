@@ -221,14 +221,7 @@ class GameScene: SKScene, ObservableObject {
         tunnelShaderManager.addScrollRotate(scroll: Float(xDelta / 1000))
         if tunnelShaderManager.isOutOfBounds() && tunnelMode {
             tunnelMode = false
-            backgroundSprite?.shader = galaxyShaderManager.getGalaxyShader()
-            backgroundSprite?.run(
-                SKAction.customAction(withDuration: 2.0) { [self] node, time in
-                    galaxyShaderManager.addRotation(
-                        angle: .pi * 2 * Float(time)
-                    )
-                }
-            )
+            beginFreeNav()
         }
 
         let offsets = galaxyShaderManager.currentGalaxyOffsets()
@@ -249,7 +242,7 @@ class GameScene: SKScene, ObservableObject {
         }
 
         if let rainbow = rainbowEffect {
-            if isGalaxyVisible {
+            if isGalaxyVisible || tunnelMode {
                 rainbow.isHidden = true
             } else if let (offsetH, offsetV) = closestOffset {
                 let compassPoint = classifyCompassPoint(
@@ -422,11 +415,31 @@ class GameScene: SKScene, ObservableObject {
         spaceshipPosition = spaceship.position
     }
     
+    let firstTunnelProgram = [500, 800, 800, -200, -1000]
     private func beginTunnel() {
         // First get inputs to the tunnel shader manager to be near 0.0
         // Then begin moving the ball around
         backgroundSprite?.shader = tunnelShaderManager.getTunnelShader()
-        
+//        let wait = SKAction.wait(forDuration: 3.0)
+//        backgroundSprite?.run(SKAction.sequence([
+//            
+//            // should not be this, needs to be affecting x forces
+//            SKAction.customAction(withDuration: 3.0) { [self] node, time in
+//                galaxyShaderManager.addRotation(angle: .pi * 2 * Float(time))
+//            }
+//        ]))
+
+    }
+    
+    private func beginFreeNav() {
+         backgroundSprite?.shader = galaxyShaderManager.getGalaxyShader()
+            backgroundSprite?.run(
+                SKAction.customAction(withDuration: 2.0) { [self] node, time in
+                    galaxyShaderManager.addRotation(
+                        angle: .pi * 2 * Float(time)
+                    )
+                }
+            )
     }
     
     private func startOrbitAnimation(for blackHole: BlackHole) {
