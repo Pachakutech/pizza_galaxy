@@ -10,21 +10,29 @@ import SpriteKit
 class TunnelShaderManager {
     static let shared = TunnelShaderManager()
     private let tunnelShader: SKShader
-    private var scrollRotate = SKUniform(
-        name: "u_scroll_progress_rotate",
-        float: 0.0
-    )
+    private var scrollRotate = SKUniform(name: "u_scroll_progress_rotate", float: 0.0)
     private var scrollZ = SKUniform(name: "u_scroll_progress_z", float: 0.0)
     private var scrollX = SKUniform(name: "u_scroll_progress_x", float: 0.0)
-    private var galaxyTextureUniform: SKUniform!
+    private var scrollBackgroundX = SKUniform(name: "u_scroll_background_x", float: 0.0)
+    private var galaxyTextureUniform: SKUniform
+    private var backgroundTexture2Uniform: SKUniform
 
     init() {
         let texture2 = SKTexture(imageNamed: "background_2")
         let galaxyTexture = SKTexture(imageNamed: "background_level_1")
-        galaxyTextureUniform = SKUniform(
-            name: "u_background",
-            texture: galaxyTexture
-        )
+        let backgroundTexture2 = SKTexture(imageNamed: "background_3")
+        galaxyTextureUniform = SKUniform(name: "u_background", texture: galaxyTexture)
+        backgroundTexture2Uniform = SKUniform(name: "u_background_2", texture: backgroundTexture2)
+
+        let uniformList = [
+            galaxyTextureUniform,
+            backgroundTexture2Uniform,
+            SKUniform(name: "u_galaxy_2", texture: texture2),
+            scrollRotate,
+            scrollZ,
+            scrollX,
+            scrollBackgroundX
+        ]
 
         tunnelShader = SKShader(
             source: """
@@ -36,7 +44,13 @@ class TunnelShaderManager {
                     
                     // Donut hole and annulus (r < 0.1 is hole, 0.1 <= r < 0.2 is gradient)
                     float hole_alpha = smoothstep(0.1, 0.2, r); // 0 at r=0.1, 1 at r=0.2
-                    vec4 hole_color = texture2D(u_background, v_tex_coord); // Background texture
+                    vec2 bg_uv = v_tex_coord + vec2(u_scroll_background_x, 0.0); // Scroll background left/right
+                    vec2 bg_uv_1 = fract(bg_uv); // Wrap first background
+                    vec2 bg_uv_2 = fract(bg_uv + vec2(0.2, 0.0)); // Wrap second background with smaller offset
+                    vec4 bg_color1 = texture2D(u_background, bg_uv_1); // background_level_1
+                    vec4 bg_color2 = texture2D(u_background_2, bg_uv_2); // background_3
+                    float blend = smoothstep(0.2, 0.8, mod(bg_uv.x, 1.0)); // Adjusted blend to favor bg_color1
+                    vec4 hole_color = mix(bg_color1, bg_color2, clamp(blend * 0.3, 0.0, 1.0)); // Reduced blend weight
                     
                     // Polar UV mapping for tunnel scrolling (outward from hole)
                     vec2 tunnel_uv;
@@ -50,17 +64,14 @@ class TunnelShaderManager {
                     gl_FragColor = mix(hole_color, tunnel_color, hole_alpha);
                 }
                 """,
-            uniforms: [
-                galaxyTextureUniform,
-                SKUniform(name: "u_galaxy_2", texture: texture2),
-                scrollRotate,
-                scrollZ,
-                scrollX,
-            ]
+            uniforms: uniformList
         )
 
         // Log initialization
         print("Tunnel shader initialized successfully")
+        print("Texture background_2 loaded: \(texture2 != nil)")
+        print("Texture background_level_1 loaded: \(galaxyTexture != nil)")
+        print("Texture background_3 loaded: \(backgroundTexture2 != nil)")
     }
 
     func getTunnelShader() -> SKShader {
@@ -70,6 +81,10 @@ class TunnelShaderManager {
     func setGalaxyTexture(forLevel level: Int) {
         let textureName = "background_level_\(level)"
         let texture = SKTexture(imageNamed: textureName)
+        guard texture != nil else {
+            print("Warning: Failed to load texture \(textureName)")
+            return
+        }
         galaxyTextureUniform.textureValue = texture
     }
 
@@ -88,18 +103,22 @@ class TunnelShaderManager {
         print("TunnelShader scrollX: \(scrollX.floatValue)")
     }
 
-    func currentTunnelOffsets() -> [(Float, Float, Float)] {
-        return [
-            (scrollRotate.floatValue, scrollZ.floatValue, scrollX.floatValue)
-        ]
+    func setScrollBackgroundX(scroll: Float) {
+        scrollBackgroundX.floatValue = scroll
+        print("TunnelShader scrollBackgroundX: \(scrollBackgroundX.floatValue)")
+    }
+
+    func currentTunnelOffsets() -> [(Float, Float, Float, Float)] {
+        return [(scrollRotate.floatValue, scrollZ.floatValue, scrollX.floatValue, scrollBackgroundX.floatValue)]
     }
 
     func isOutOfBounds() -> Bool {
-        abs(scrollX.floatValue) > 0.5
+        abs(scrollX.floatValue) > 0.5 || abs(scrollBackgroundX.floatValue) > 0.4
     }
-    
+
     func reset() {
         scrollX.floatValue = 0.0
         scrollZ.floatValue = 0.0
+        scrollBackgroundX.floatValue = 0.0
     }
 }

@@ -62,7 +62,7 @@ class GameScene: SKScene, ObservableObject {
     private var centerY: CGFloat { size.height / 2 }
     private let tunnelShaderManager = TunnelShaderManager()
     private let galaxyShaderManager = GalaxyShaderManager()
-    private var tunnelMode = false
+    private var tunnelMode = true
     private var timeOnGalaxy = 0
 
     override init(size: CGSize) {
@@ -415,7 +415,7 @@ class GameScene: SKScene, ObservableObject {
         spaceshipPosition = spaceship.position
     }
 
-    let firstTunnelProgram = [20, 20, 20, -20, -100]
+    let firstTunnelProgram = [2.0, 2.0, 2.0, -2.0, -1.0]
     private func beginTunnel() {
         // First get inputs to the tunnel shader manager to be near 0.0
         // Then begin moving the ball around
@@ -427,8 +427,14 @@ class GameScene: SKScene, ObservableObject {
                 firstTunnelProgram.flatMap { force in
                     [
                         wait,
-                        SKAction.customAction(withDuration: 3.0) {
-                            [self] node, time in xAccDelta += CGFloat(force)
+                        SKAction.customAction(withDuration: 1.0) { [self] node, time in
+                            tunnelShaderManager.setScrollBackgroundX(scroll: Float(force/10)*Float(time))
+                        },
+                        SKAction.customAction(withDuration: 1.0) {
+                            [self] node, time in xAccDelta += CGFloat(force*5)
+                        },
+                        SKAction.customAction(withDuration: 1.0) { [self] node, time in
+                            tunnelShaderManager.setScrollBackgroundX(scroll: Float(force/10)*Float(1-time))
                         },
                     ]
                 }
