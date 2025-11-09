@@ -18,6 +18,7 @@ class CelestialBody: SKSpriteNode, ZDepthBody {
     var xInitialOffset: CGFloat = 0
     var yInitialOffset: CGFloat = 0
     var xCumulativeOffset: CGFloat = 0 // New property for cumulative x-motion
+    var isBeingTractored: Bool = false  // Flag to prevent z-updates/recycling during animation
 
     init(textureName: String, size: CGSize, mass: CGFloat) {
         let texture = SKTexture(imageNamed: textureName)
@@ -26,6 +27,7 @@ class CelestialBody: SKSpriteNode, ZDepthBody {
         }
         super.init(texture: texture, color: .clear, size: size)
         self.mass = mass
+        isUserInteractionEnabled = true  // Enable touch interaction (though handled at scene level)
         setupPhysicsBody()
     }
 
@@ -71,6 +73,7 @@ class CelestialBody: SKSpriteNode, ZDepthBody {
         setScale(0.1)
         hit = false
         isHidden = false
+        isBeingTractored = false
     }
      
     func generateBiasedRadian(sigma: CGFloat, mean: CGFloat = 0) -> CGFloat {

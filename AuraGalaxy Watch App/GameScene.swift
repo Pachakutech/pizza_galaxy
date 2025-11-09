@@ -33,9 +33,9 @@ class GameScene: SKScene, ObservableObject {
 
     @Published var spaceship: Spaceship!
     @Published var spaceshipPosition: CGPoint = .zero
-    private var activeBlackHoles: [BlackHole] = []
-    private var activeStars: [Star] = []
-    private var inactiveCelestialBodies: [CelestialBody] = []
+    var activeBlackHoles: [BlackHole] = []
+    var activeStars: [Star] = []
+    var inactiveCelestialBodies: [CelestialBody] = []
     private var backgroundNodes: [SKSpriteNode] = []
     private var crownDelta: Double = 0.0
     private var lastCrownInputTime: TimeInterval = 0.0
@@ -64,17 +64,20 @@ class GameScene: SKScene, ObservableObject {
     private let galaxyShaderManager = GalaxyShaderManager()
     private var tunnelMode = true
     private var timeOnGalaxy = 0
+    private var tractorBeamAnimator: TractorBeamAnimator!
 
     override init(size: CGSize) {
         super.init(size: size)
         setupAudioSession()
         setupScene()
+        tractorBeamAnimator = TractorBeamAnimator(scene: self)
     }
 
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         setupAudioSession()
         setupScene()
+        tractorBeamAnimator = TractorBeamAnimator(scene: self)
     }
 
     private func setupScene() {
@@ -142,6 +145,26 @@ class GameScene: SKScene, ObservableObject {
         collisionSoundAction = soundAction
         print("Collision sound preloaded")
     }
+    
+    func handleTap(at location: CGPoint) {
+            let touchedNodes = nodes(at: location)
+            for node in touchedNodes {
+                if let body = node as? CelestialBody, !body.isBeingTractored {
+                    handleCelestialBodyTap(body)
+                    return  // Handle only the topmost celestial body per tap
+                }
+            }
+            print("Tap at \(location), no celestial body touched")
+    }
+
+        private func handleCelestialBodyTap(_ body: CelestialBody) {
+            guard !tunnelMode else {
+                print("Tap ignored: Not in FreeNav mode")
+                return
+            }
+            tractorBeamAnimator.startDragWithBeam(on: body, from: spaceship)
+        }
+    
 
     private func classifyCompassPoint(offsetH: Float, offsetV: Float)
         -> CompassPoint
@@ -216,7 +239,7 @@ class GameScene: SKScene, ObservableObject {
         let xScrollOffset = xApparentVelocity / bgScrollSpeed
         galaxyShaderManager.addScrollH(scroll: Float(-xScrollOffset / 1000))
         galaxyShaderManager.addScrollV(scroll: Float(yScrollOffset / 10000))
-        tunnelShaderManager.addScrollX(scroll: Float(-xScrollOffset / 1000))
+        tunnelShaderManager.addScrollX(scroll: Float(xScrollOffset / 1000))
         tunnelShaderManager.addScrollZ(scroll: Float(zSpeedAvg / 100))
         tunnelShaderManager.addScrollRotate(scroll: Float(xDelta / 500))
         if tunnelShaderManager.isOutOfBounds() && tunnelMode {
@@ -296,34 +319,39 @@ class GameScene: SKScene, ObservableObject {
             if body.zDepth <= 0 {
                 bodiesToReset.append(body)
             } else {
-                body.updatePositionAndScale(
+                if !body.isBeingTractored {
+                  body.updatePositionAndScale(
                     centerX: centerX,
                     centerY: centerY,
                     verticalOffset: 0,
                     xOffset: xCelestialOffset
-                )
-                let distance = spaceship.position.distance(to: body.position)
-                body.zSpeed = max(
+                  )
+                  body.zSpeed = max(
                     zSpeedLowerLimit,
                     min(zSpeedUpperLimit, body.zSpeed + zAccBase)
-                )
-                zSpeedAvg +=
+                  )
+                  zSpeedAvg +=
                     (body.zSpeed - zSpeedAvg) / CGFloat(activeStars.count + 1)
+                }
 
-                if body.zDepth <= 50 {
+                let distance = spaceship.position.distance(to: body.position)
+                if body.zDepth <= 50 || body.isBeingTractored {
                     let collisionThreshold =
                         (spaceship.size.width / 2 + body.size.width / 2)
-                    if distance < collisionThreshold && !body.hit {
+                    if distance < collisionThreshold  {
                         if body is BlackHole {
-                            ySpeed = 0.0
-                            xApparentVelocity = 0.0
-                            startOrbitAnimation(for: body as! BlackHole)
+                            if !body.hit{
+                                ySpeed = 0.0
+                                xApparentVelocity = 0.0
+                                startOrbitAnimation(for: body as! BlackHole)
+                            }
                         } else {
                             body.changeFace(to: "lovey_face")
                             zSpeedDelta += zSpeedDefault * 3 / 4
                             if let soundAction = collisionSoundAction {
                                 run(soundAction)
                             }
+                            tractorBeamAnimator.startPostAnimation(on: body, from: spaceship)
                         }
                         body.hit = true
                     }
@@ -364,6 +392,7 @@ class GameScene: SKScene, ObservableObject {
         }
 
         for body in bodiesToReset {
+            if body.isBeingTractored {continue}
             body.isHidden = true
             body.removeFromParent()
             body.zSpeed = zSpeedAvg
@@ -585,10 +614,6 @@ class GameScene: SKScene, ObservableObject {
         let forceJ = sin(forceAngle) * forceMagnitude
         xAccDelta += forceI * 0.7
         yAcc += forceJ * 0.7
-    }
-
-    func handleTap(at location: CGPoint) {
-        print("Tap at \(location), no action defined")
     }
 
     func updateCrownDelta(_ delta: Double) {
