@@ -89,6 +89,7 @@ class TractorBeamAnimator {
     }
     func startPostAnimation(on body: CelestialBody, from spaceship: Spaceship) {
         guard let scene = scene else { return }
+        print("Starting post anim")
         
         // Phase 2: Grow, fade, move to upper-right (ease-out) for non-blackholes
         let postDuration: TimeInterval = 3.0
