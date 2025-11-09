@@ -45,14 +45,6 @@ struct ContentView: View {
                     gameScene.handleTap(at: location)
                 }
         )
-        .gesture(
-            DragGesture()
-                .onChanged { value in
-                    let deltaY = -value.translation.height / 1000.0
-                    crownValue += deltaY
-                    print("Drag gesture deltaY: \(deltaY), crownValue: \(crownValue)")
-                }
-        )
         .onChange(of: crownValue) { newValue, oldValue in
             let delta = newValue - oldValue
             print("Crown onChange triggered: newValue=\(newValue), oldValue=\(oldValue), delta=\(delta)")
