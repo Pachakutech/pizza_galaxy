@@ -149,7 +149,11 @@ class GameScene: SKScene, ObservableObject {
     func handleTap(at location: CGPoint) {
             let touchedNodes = nodes(at: location)
             for node in touchedNodes {
-                if let body = node as? CelestialBody, !body.isBeingTractored {
+                print("got tap on") // Taps on Stars ARE passing this condition
+             print("got tap on type \(String(describing: type(of:node)))")
+//                if let body = node as? CelestialBody && !body.hit {
+                if let body = node as? CelestialBody { // Stars are NOT passing this condition
+                    print("got tap on so handling it")
                     handleCelestialBodyTap(body)
                     return  // Handle only the topmost celestial body per tap
                 }
@@ -162,6 +166,7 @@ class GameScene: SKScene, ObservableObject {
                 print("Tap ignored: Not in FreeNav mode")
                 return
             }
+            print("got tap on a star? \(body is Star)")
             tractorBeamAnimator.startDragWithBeam(on: body, from: spaceship)
         }
     
@@ -239,7 +244,7 @@ class GameScene: SKScene, ObservableObject {
         let xScrollOffset = xApparentVelocity / bgScrollSpeed
         galaxyShaderManager.addScrollH(scroll: Float(-xScrollOffset / 1000))
         galaxyShaderManager.addScrollV(scroll: Float(yScrollOffset / 10000))
-        tunnelShaderManager.addScrollX(scroll: Float(xScrollOffset / 1000))
+        tunnelShaderManager.addScrollX(scroll: Float(-xScrollOffset / 1000))
         tunnelShaderManager.addScrollZ(scroll: Float(zSpeedAvg / 100))
         tunnelShaderManager.addScrollRotate(scroll: Float(xDelta / 500))
         if tunnelShaderManager.isOutOfBounds() && tunnelMode {
@@ -338,13 +343,11 @@ class GameScene: SKScene, ObservableObject {
                 if body.zDepth <= 50 || body.isBeingTractored {
                     let collisionThreshold =
                         (spaceship.size.width / 2 + body.size.width / 2)
-                    if distance < collisionThreshold  {
+                    if distance < collisionThreshold && !body.hit {
                         if body is BlackHole {
-                            if !body.hit{
                                 ySpeed = 0.0
                                 xApparentVelocity = 0.0
                                 startOrbitAnimation(for: body as! BlackHole)
-                            }
                         } else {
                             body.changeFace(to: "lovey_face")
                             zSpeedDelta += zSpeedDefault * 3 / 4
@@ -425,8 +428,8 @@ class GameScene: SKScene, ObservableObject {
                 newBody = isBlackHole ? BlackHole() : Star()
             }
             newBody.reset(
-                xOffset: xApparentVelocity / 2,
-                yOffset: -yOffset / 2,
+                xOffset: xApparentVelocity / 6,
+                yOffset: -yOffset * 3 / 4,
                 zNewSpeed: zSpeedAvg
             )
             newBody.zPosition = -1
