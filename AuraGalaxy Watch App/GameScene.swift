@@ -145,31 +145,64 @@ class GameScene: SKScene, ObservableObject {
         collisionSoundAction = soundAction
         print("Collision sound preloaded")
     }
-    
+
     func handleTap(at location: CGPoint) {
-            let touchedNodes = nodes(at: location)
-            for node in touchedNodes {
-                print("got tap on") // Taps on Stars ARE passing this condition
-             print("got tap on type \(String(describing: type(of:node)))")
-//                if let body = node as? CelestialBody && !body.hit {
-                if let body = node as? CelestialBody { // Stars are NOT passing this condition
-                    print("got tap on so handling it")
+        print("Tap location: \(location)")
+        let touchedNodes = nodes(at: location)
+        var closestBody: CelestialBody? = nil
+        var minDist: CGFloat = .greatestFiniteMagnitude
+
+        // Check touched + find nearest active body for comparison
+        for node in touchedNodes {
+            print(
+                "Touched: type=\(String(describing: type(of: node))), frame=\(node.calculateAccumulatedFrame())"
+            )
+            var current: SKNode? = node
+            while current != nil {
+                if let body = current as? CelestialBody, !body.isBeingTractored
+                {
+                    print(
+                        "Handling body: \(type(of: body)), frame=\(body.calculateAccumulatedFrame())"
+                    )
                     handleCelestialBodyTap(body)
-                    return  // Handle only the topmost celestial body per tap
+                    return
                 }
+                current = current?.parent
             }
-            print("Tap at \(location), no celestial body touched")
+        }
+
+        // Find nearest active body for miss debug
+        for body in activeStars + activeBlackHoles {
+            let bodyFrame = body.calculateAccumulatedFrame()
+            let dist = distanceFromRect(bodyFrame, toPoint: location)
+            if dist < minDist {
+                minDist = dist
+                closestBody = body
+            }
+        }
+        if let closest = closestBody {
+            print(
+                "Missed closest \(type(of: closest)): dist to frame=\(minDist), its frame=\(closest.calculateAccumulatedFrame())"
+            )
+        }
+        print("No body touched")
     }
 
-        private func handleCelestialBodyTap(_ body: CelestialBody) {
-            guard !tunnelMode else {
-                print("Tap ignored: Not in FreeNav mode")
-                return
-            }
-            print("got tap on a star? \(body is Star)")
-            tractorBeamAnimator.startDragWithBeam(on: body, from: spaceship)
+    // Helper (add to GameScene)
+    func distanceFromRect(_ rect: CGRect, toPoint point: CGPoint) -> CGFloat {
+        let dx = max(rect.minX - point.x, 0, point.x - rect.maxX)
+        let dy = max(rect.minY - point.y, 0, point.y - rect.maxY)
+        return sqrt(dx * dx + dy * dy)
+    }
+
+    private func handleCelestialBodyTap(_ body: CelestialBody) {
+        guard !tunnelMode else {
+            print("Tap ignored: Not in FreeNav mode")
+            return
         }
-    
+        print("got tap on a star? \(body is Star)")
+        tractorBeamAnimator.startDragWithBeam(on: body, from: spaceship)
+    }
 
     private func classifyCompassPoint(offsetH: Float, offsetV: Float)
         -> CompassPoint
@@ -193,14 +226,14 @@ class GameScene: SKScene, ObservableObject {
 
     override func update(_ currentTime: TimeInterval) {
         frameCount += 1
-
+        
         let zAccBase = zSpeedDelta
         zSpeedDelta = 0.0
         zSpeedAvg = (7 * zSpeedAvg + zSpeedDefault) / 8
-
+        
         let xDelta = spaceship.position.x - centerX
         xApparentVelocity =
-            xApparentVelocity * xDamping + xAccDelta + xDelta
+        xApparentVelocity * xDamping + xAccDelta + xDelta
         xApparentVelocity = min(
             max(-maxSpaceshipSpeedX, xApparentVelocity),
             maxSpaceshipSpeedX
@@ -220,26 +253,27 @@ class GameScene: SKScene, ObservableObject {
         spaceshipPosition = spaceship.position
         let xCelestialOffset = -xApparentVelocity * celestialScrollSpeedFactor
         crownDelta = 0
-
+        
         ySpeed += yAcc
         yAcc = 0.0
         yOffset += ySpeed
         ySpeed = ySpeed * 1 / 9
         yOffset -= parabola / 8 - 0.8
         yOffset = min(max(-centerY, yOffset), centerY)
-
+        let yCelestialOffset = -ySpeed * celestialScrollSpeedFactor
+        
         if let camera = camera {
             camera.position.y = centerY
             camera.position.x = centerX
         }
-
+        
         if crownDelta != 0 {
             lastCrownInputTime = currentTime
             spaceship.applyThrust(crownDelta: crownDelta)
         } else if currentTime - lastCrownInputTime > 0.25 {
             spaceship.hideThrusters()
         }
-
+        
         let yScrollOffset = min(max(-yMaxOffset, yOffset), yMaxOffset)
         let xScrollOffset = xApparentVelocity / bgScrollSpeed
         galaxyShaderManager.addScrollH(scroll: Float(-xScrollOffset / 1000))
@@ -251,21 +285,21 @@ class GameScene: SKScene, ObservableObject {
             tunnelMode = false
             beginFreeNav()
         }
-
+        
         let offsets = galaxyShaderManager.currentGalaxyOffsets()
         var isGalaxyVisible = false
         var closestOffset: (Float, Float)? = nil
         var minDistance: Float = .greatestFiniteMagnitude
-
+        
         for (offsetH, offsetV) in offsets {
-            if abs(offsetH) <= 0.5 && abs(offsetV) <= 0.5 {
-                isGalaxyVisible = true
-                break
-            }
             let distance = sqrt(offsetH * offsetH + offsetV * offsetV)
             if distance < minDistance {
                 minDistance = distance
                 closestOffset = (offsetH, offsetV)
+            }
+            if abs(offsetH) <= 0.5 && abs(offsetV) <= 0.5 {
+                isGalaxyVisible = true
+                break
             }
         }
 
@@ -294,8 +328,12 @@ class GameScene: SKScene, ObservableObject {
         } else {
             timeOnGalaxy = 0
         }
+        print(
+            "updating at location x \(xCelestialOffset) y \(yCelestialOffset) timeOnGalaxy: \(timeOnGalaxy) with first galaxy offset: \(offsets.map{offsetH, offsetV in "h:\(offsetH) v:\(offsetV)"}.first ?? "none" ) and shaderCumulH:\(galaxyShaderManager.getCumulativeScrollH()) V:\(galaxyShaderManager.getCumulativeScrollV())"
+        )
         if timeOnGalaxy > 60 && !tunnelMode {
             tunnelMode = !tunnelMode
+            print("beginning tunnel")
             beginTunnel()
         }
         //        for (offsetH, offsetV) in offsets {
@@ -325,36 +363,46 @@ class GameScene: SKScene, ObservableObject {
                 bodiesToReset.append(body)
             } else {
                 if !body.isBeingTractored {
-                  body.updatePositionAndScale(
-                    centerX: centerX,
-                    centerY: centerY,
-                    verticalOffset: 0,
-                    xOffset: xCelestialOffset
-                  )
-                  body.zSpeed = max(
-                    zSpeedLowerLimit,
-                    min(zSpeedUpperLimit, body.zSpeed + zAccBase)
-                  )
-                  zSpeedAvg +=
-                    (body.zSpeed - zSpeedAvg) / CGFloat(activeStars.count + 1)
+                    body.updatePositionAndScale(
+                        centerX: centerX,
+                        centerY: centerY,
+                        xOffset: xCelestialOffset,
+                        yOffset: yCelestialOffset,
+                    )
+                    body.zSpeed = max(
+                        zSpeedLowerLimit,
+                        min(zSpeedUpperLimit, body.zSpeed + zAccBase)
+                    )
+                    zSpeedAvg +=
+                        (body.zSpeed - zSpeedAvg)
+                        / CGFloat(activeStars.count + 1)
                 }
 
+                //                if body is Star {
+                //                    print(
+                //                        "Active star: pos=\(body.position), hidden=\(body.isHidden), scale=\(body.xScale), zDepth=\(body.zDepth) is \(body.position.y >= 0 && body.position.y < size.height && body.position.x >= 0 && body.position.x < size.width ? "" : "not") within bounds"
+                //                    )
+                //                }
+
                 let distance = spaceship.position.distance(to: body.position)
-                if body.zDepth <= 50 || body.isBeingTractored {
+                if body.zDepth <= 50 || !body.hit {
                     let collisionThreshold =
                         (spaceship.size.width / 2 + body.size.width / 2)
                     if distance < collisionThreshold && !body.hit {
                         if body is BlackHole {
-                                ySpeed = 0.0
-                                xApparentVelocity = 0.0
-                                startOrbitAnimation(for: body as! BlackHole)
+                            ySpeed = 0.0
+                            xApparentVelocity = 0.0
+                            startOrbitAnimation(for: body as! BlackHole)
                         } else {
                             body.changeFace(to: "lovey_face")
                             zSpeedDelta += zSpeedDefault * 3 / 4
                             if let soundAction = collisionSoundAction {
                                 run(soundAction)
                             }
-                            tractorBeamAnimator.startPostAnimation(on: body, from: spaceship)
+                            tractorBeamAnimator.startPostAnimation(
+                                on: body,
+                                from: spaceship
+                            )
                         }
                         body.hit = true
                     }
@@ -395,13 +443,21 @@ class GameScene: SKScene, ObservableObject {
         }
 
         for body in bodiesToReset {
-            if body.isBeingTractored {continue}
+            if body.isBeingTractored { continue }
             body.isHidden = true
             body.removeFromParent()
             body.zSpeed = zSpeedAvg
             activeBlackHoles.removeAll { $0 === body }
             activeStars.removeAll { $0 === body }
             inactiveCelestialBodies.append(body)
+        }
+
+        let count = bodiesToReset.count
+
+        if count > 0 {
+            print(
+                "resetting \(count) bodies with \(activeStars.count) active stars"
+            )
         }
 
         if frameCount % spawnIntervalFrames == 0
@@ -429,7 +485,7 @@ class GameScene: SKScene, ObservableObject {
             }
             newBody.reset(
                 xOffset: xApparentVelocity / 6,
-                yOffset: -yOffset * 3 / 4,
+                yOffset: -yOffset / 2,
                 zNewSpeed: zSpeedAvg
             )
             newBody.zPosition = -1
@@ -459,14 +515,20 @@ class GameScene: SKScene, ObservableObject {
                 firstTunnelProgram.flatMap { force in
                     [
                         wait,
-                        SKAction.customAction(withDuration: 1.0) { [self] node, time in
-                            tunnelShaderManager.setScrollBackgroundX(scroll: Float(force/10)*Float(time))
+                        SKAction.customAction(withDuration: 1.0) {
+                            [self] node, time in
+                            tunnelShaderManager.setScrollBackgroundX(
+                                scroll: Float(force / 10) * Float(time)
+                            )
                         },
                         SKAction.customAction(withDuration: 1.0) {
-                            [self] node, time in xAccDelta += CGFloat(force*5)
+                            [self] node, time in xAccDelta += CGFloat(force * 5)
                         },
-                        SKAction.customAction(withDuration: 1.0) { [self] node, time in
-                            tunnelShaderManager.setScrollBackgroundX(scroll: Float(force/10)*Float(1-time))
+                        SKAction.customAction(withDuration: 1.0) {
+                            [self] node, time in
+                            tunnelShaderManager.setScrollBackgroundX(
+                                scroll: Float(force / 10) * Float(1 - time)
+                            )
                         },
                     ]
                 }
@@ -525,7 +587,9 @@ class GameScene: SKScene, ObservableObject {
         }
         backgroundSprite?.run(
             SKAction.customAction(withDuration: 3.0) { [self] node, time in
-                galaxyShaderManager.addRotation(angle: .pi * 2 * Float(time/3))
+                galaxyShaderManager.addRotation(
+                    angle: .pi * 2 * Float(time / 3)
+                )
             }
         )
         applyEndForce(to: blackHole)
