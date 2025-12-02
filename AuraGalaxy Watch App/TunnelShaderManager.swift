@@ -69,9 +69,6 @@ class TunnelShaderManager {
 
         // Log initialization
         print("Tunnel shader initialized successfully")
-        print("Texture background_2 loaded: \(texture2 != nil)")
-        print("Texture background_level_1 loaded: \(galaxyTexture != nil)")
-        print("Texture background_3 loaded: \(backgroundTexture2 != nil)")
     }
 
     func getTunnelShader() -> SKShader {
@@ -90,22 +87,18 @@ class TunnelShaderManager {
 
     func addScrollRotate(scroll: Float) {
         scrollRotate.floatValue += scroll
-        print("TunnelShader scrollRotate: \(scrollRotate.floatValue)")
     }
 
     func addScrollZ(scroll: Float) {
         scrollZ.floatValue += scroll
-        print("TunnelShader scrollZ: \(scrollZ.floatValue)")
     }
 
     func addScrollX(scroll: Float) {
         scrollX.floatValue += scroll
-        print("TunnelShader scrollX: \(scrollX.floatValue)")
     }
 
     func setScrollBackgroundX(scroll: Float) {
         scrollBackgroundX.floatValue = scroll
-        print("TunnelShader scrollBackgroundX: \(scrollBackgroundX.floatValue)")
     }
 
     func currentTunnelOffsets() -> [(Float, Float, Float, Float)] {
