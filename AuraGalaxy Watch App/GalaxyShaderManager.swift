@@ -29,7 +29,7 @@ class GalaxyShaderManager {
     private let tilePeriod: Float = 1.0
     private let speedMultiplier: Float = 1.0
     private let repetitionPeriod: Float = 4.0
-    private let initialOffset: Float = 2.0
+    private let initialOffset: Float = 2.0 // Setting this to zero makes the galaxy not appear to the right and disappear to the left
 
     init() {
         let randomNumPeriodsH = Float.random(in: 3...10)
@@ -48,23 +48,12 @@ class GalaxyShaderManager {
         centerAlignmentValue = initialOffset / speedMultiplier
 
         let galaxyTexture = SKTexture(imageNamed: "background_level_1")
-        guard galaxyTexture != nil else {
-            fatalError("Failed to load texture background_level_1")
-        }
         galaxyTextureUniform = SKUniform(
             name: "u_galaxy_1",
             texture: galaxyTexture
         )
-
         let galaxyTexture2 = SKTexture(imageNamed: "background_2")
-        guard galaxyTexture2 != nil else {
-            fatalError("Failed to load texture background_2")
-        }
-
         let galaxyTexture3 = SKTexture(imageNamed: "background_3")
-        guard galaxyTexture3 != nil else {
-            fatalError("Failed to load texture background_3")
-        }
 
         let uniformList = [
             galaxyTextureUniform,
@@ -93,11 +82,11 @@ class GalaxyShaderManager {
                     uv += 0.5;
 
                     // Rotated and scrolled UVs for u_galaxy_1 (spinning with tiling support)
-                    float local_scroll_h = mod(u_scroll_progress_h - u_appearance_threshold_h, \(repetitionPeriod));
-                    float local_scroll_v = mod(u_scroll_progress_v - u_appearance_threshold_v, \(repetitionPeriod));
+                    float local_scroll_h = mod(u_scroll_progress_h, \(repetitionPeriod));
+                    float local_scroll_v = mod(u_scroll_progress_v, \(repetitionPeriod));
                     vec2 uv_1 = v_tex_coord;
-                    uv_1.x += local_scroll_h - \(initialOffset);
-                    uv_1.y += local_scroll_v - \(initialOffset);
+                    uv_1.x += local_scroll_h >= 0.0 ? local_scroll_h - \(initialOffset) : local_scroll_h + \(initialOffset);
+                    uv_1.y += local_scroll_v >= 0.0 ? local_scroll_v - \(initialOffset) : local_scroll_v + \(initialOffset);
                     uv_1 -= 0.5;
                     uv_1 = vec2(
                         uv_1.x * cos(u_rotation) - uv_1.y * sin(u_rotation),
@@ -187,22 +176,24 @@ class GalaxyShaderManager {
     }
 
     func getLocalScrollH() -> Float {
-        return (scrollH.floatValue - appearanceThresholdH).truncatingRemainder(
+        return (scrollH.floatValue).truncatingRemainder(
             dividingBy: repetitionPeriod
         )
     }
 
     func getLocalScrollV() -> Float {
-        return (scrollV.floatValue - appearanceThresholdV).truncatingRemainder(
+        return (scrollV.floatValue).truncatingRemainder(
             dividingBy: repetitionPeriod
         )
     }
 
     func currentGalaxyOffsets() -> [(Float, Float)] {
+        let h = getLocalScrollH()
+        let v = getLocalScrollV()
         return [
             (
-                getLocalScrollH() - initialOffset,
-                getLocalScrollV() - initialOffset
+                h >= 0 ? h - initialOffset : h + initialOffset,
+                v >= 0 ? v - initialOffset : v + initialOffset
             )
         ]
     }
