@@ -14,16 +14,21 @@ class CelestialBody: SKSpriteNode, ZDepthBody {
     var zDepth: CGFloat = 100.0
     var mass: CGFloat = 1.0
     var direction: CGFloat = 0
-    var radialMagnitude: CGFloat = 100 // sensitivity to changes
+    var radialMagnitude: CGFloat = 100  // sensitivity to changes
     var xInitialOffset: CGFloat = 0
     var yInitialOffset: CGFloat = 0
-    var xCumulativeOffset: CGFloat = 0 // New property for cumulative x-motion
+    var currentX: CGFloat = 0
+    var currentY: CGFloat = 0
+    var xCumulativeOffset: CGFloat = 0
+    var yCumulativeOffset: CGFloat = 0
     var isBeingTractored: Bool = false  // Flag to prevent z-updates/recycling during animation
 
     init(textureName: String, size: CGSize, mass: CGFloat) {
         let texture = SKTexture(imageNamed: textureName)
         guard texture.size() != .zero else {
-            fatalError("Error: Texture '\(textureName)' for CelestialBody is missing or invalid")
+            fatalError(
+                "Error: Texture '\(textureName)' for CelestialBody is missing or invalid"
+            )
         }
         super.init(texture: texture, color: .clear, size: size)
         self.mass = mass
@@ -47,27 +52,38 @@ class CelestialBody: SKSpriteNode, ZDepthBody {
         texture = SKTexture(imageNamed: textureName)
     }
 
-    func updatePositionAndScale(centerX: CGFloat, centerY: CGFloat, verticalOffset: CGFloat, xOffset: CGFloat) {
+    func updatePositionAndScale(
+        centerX: CGFloat,
+        centerY: CGFloat,
+        xOffset: CGFloat,
+        yOffset: CGFloat
+    ) {
         xCumulativeOffset += xOffset
-        let scale = 0.1 + (1 - zDepth / 100) * 0.9
+        yCumulativeOffset += yOffset
+
+        let scale = 0.1 + (1 - zDepth * zDepth / 10000) * 0.9
         setScale(scale)
         let radialFactor = (100 - zDepth) / 100 * radialMagnitude
-        position = CGPoint(
-            x: centerX - cos(direction) * radialFactor - xInitialOffset - xCumulativeOffset,
-            y: centerY - sin(direction) * radialFactor - yInitialOffset - verticalOffset
-        )
-        zPosition = 20 - zDepth / 5 // zDepth 0 -> zPosition 20, zDepth 100 -> zPosition 0
-//        print("Updated \(texture?.description ?? "unknown"): zDepth=\(zDepth), zPosition=\(zPosition), radialFactor=\(radialFactor), pos=\(position), xOffset=\(xOffset), xCumulativeOffset=\(xCumulativeOffset)")
+        currentX =
+            centerX - cos(direction) * radialFactor - xInitialOffset
+            - xCumulativeOffset
+        currentY =
+            centerY - sin(direction) * radialFactor - yInitialOffset
+            - yCumulativeOffset
+        position = CGPoint(x: currentX, y: currentY)
+        zPosition = 20 - zDepth / 5  // zDepth 0 -> zPosition 20, zDepth 100 -> zPosition 0
+        //        print("Updated \(texture?.description ?? "unknown"): zDepth=\(zDepth), zPosition=\(zPosition), radialFactor=\(radialFactor), pos=\(position), xOffset=\(xOffset), xCumulativeOffset=\(xCumulativeOffset)")
     }
 
     func reset(xOffset: CGFloat, yOffset: CGFloat, zNewSpeed: CGFloat) {
         let radian = generateBiasedRadian(sigma: 6)
         let radialOffset = CGFloat.random(in: 5...20)
-        direction = (radian + .pi/2) * (Bool.random() ? 1 : -1)
+        direction = (radian + .pi / 2) * (Bool.random() ? 1 : -1)
         xInitialOffset = cos(direction) * radialOffset + xOffset
         yInitialOffset = sin(direction) * radialOffset + yOffset
-        xCumulativeOffset = 0 // Reset cumulative offset
-        zPosition = 0 // Matches zDepth = 100
+        xCumulativeOffset = 0  // Reset cumulative offset
+        yCumulativeOffset = 0
+        zPosition = 0  // Matches zDepth = 100
         zDepth = 100
         zSpeed = zNewSpeed
         setScale(0.1)
@@ -75,7 +91,7 @@ class CelestialBody: SKSpriteNode, ZDepthBody {
         isHidden = false
         isBeingTractored = false
     }
-     
+
     func generateBiasedRadian(sigma: CGFloat, mean: CGFloat = 0) -> CGFloat {
         // Use a Gaussian-like distribution to bias towards π/2 (vertical), then shift to horizontal
         // Approximate Gaussian using Bell-Knop transform

@@ -21,10 +21,25 @@ class Star: CelestialBody {
     }
 
     override func reset(xOffset: CGFloat, yOffset: CGFloat, zNewSpeed: CGFloat) {
-        super.reset(xOffset: xOffset, yOffset: yOffset, zNewSpeed: zNewSpeed)
         changeFace(to: "frowny_face")
         // Reapply debug border
+        // In reset
+        let frameDebug = SKAction.run {
+            let path = CGPath(rect: self.frame, transform: nil)
+            let shape = SKShapeNode(path: path)
+            shape.strokeColor = .blue
+            shape.lineWidth = 2 / self.xScale  // Adjust for scale
+            shape.fillColor = .clear
+            shape.zPosition = 1
+            shape.position.x = super.currentX
+            shape.position.y = super.currentY
+            self.parent?.addChild(shape)
+            shape.run(SKAction.sequence([SKAction.wait(forDuration: 5.0), SKAction.removeFromParent()]))
+        }
+        print("Star Reset at x \(currentX) y \(currentY)")
+        run(frameDebug)
         color = .red
         colorBlendFactor = 0.1 // Remove after testing
+        super.reset(xOffset: xOffset, yOffset: yOffset, zNewSpeed: zNewSpeed)
     }
 }
