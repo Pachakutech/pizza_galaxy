@@ -10,24 +10,24 @@ import SpriteKit
 @MainActor
 class TractorBeamAnimator {
     private weak var scene: GameScene?
-    
+
     init(scene: GameScene) {
         self.scene = scene
     }
-    
+
     func startDragWithBeam(on body: CelestialBody, from spaceship: Spaceship) {
         guard let scene = scene else { return }
         print("starting tractor beam animation")
-        
+
         body.isBeingTractored = true
-        
+
         // Load tractor beam emitter
         let beamEmitter = SKEmitterNode(fileNamed: "TractorBeam.sks")!
         beamEmitter.position = spaceship.position
         beamEmitter.zPosition = 5  // Above bodies, below spaceship
         // Remove targetNode if causing issues; particles will be in emitter's coord system
         // beamEmitter.targetNode = scene
-        
+
         // Configure like jets: low birthrate, no ranges for thin line
         beamEmitter.particleBirthRate = 20  // Low like jets (10-20 for visibility without density)
         beamEmitter.emissionAngle = 10
@@ -41,18 +41,22 @@ class TractorBeamAnimator {
         beamEmitter.particleAlphaRange = 0
         beamEmitter.particleAlphaSpeed = -0.3  // Gentle fade
         beamEmitter.particlePositionRange = CGVector(dx: 1, dy: 1)  // Tiny range for line thickness
-        
+
         scene.addChild(beamEmitter)
         beamEmitter.advanceSimulationTime(1.0)  // Kickstart particles
-        
+
         // Phase 1: Drag to spaceship (ease-in)
         let dragDuration: TimeInterval = 2.0
-        let dragAction = SKAction.customAction(withDuration: dragDuration) { node, time in
+        let dragAction = SKAction.customAction(withDuration: dragDuration) {
+            node,
+            time in
             let t = CGFloat(time / dragDuration)
             let easedT = t * t  // Quadratic ease-in
             node.position = CGPoint(
-                x: spaceship.position.x + (body.position.x - spaceship.position.x) * (1 - easedT),
-                y: spaceship.position.y + (body.position.y - spaceship.position.y) * (1 - easedT)
+                x: spaceship.position.x
+                    + (body.position.x - spaceship.position.x) * (1 - easedT),
+                y: spaceship.position.y
+                    + (body.position.y - spaceship.position.y) * (1 - easedT)
             )
             // Update beam
             let dx = body.position.x - spaceship.position.x
@@ -61,17 +65,20 @@ class TractorBeamAnimator {
             let angleRad = atan2(dy, dx)
             beamEmitter.position = spaceship.position
             beamEmitter.zRotation = angleRad + .pi
-            beamEmitter.particleLifetime = max(0.5, dist / beamEmitter.particleSpeed)  // Proportional length
+            beamEmitter.particleLifetime = max(
+                0.5,
+                dist / beamEmitter.particleSpeed
+            )  // Proportional length
             if dist < 10 {  // Stop near collision to avoid hop
-                            beamEmitter.particleBirthRate = 0
-                        }
+                beamEmitter.particleBirthRate = 0
+            }
         }
-        
+
         // Stop emitting after drag
         let stopBeam = SKAction.run {
             beamEmitter.particleBirthRate = 0
         }
-        
+
         // Cleanup
         let cleanup = SKAction.run {
             print("cleaning up tractor animation")
@@ -80,9 +87,14 @@ class TractorBeamAnimator {
             scene.activeStars.removeAll { $0 === body }
             scene.activeBlackHoles.removeAll { $0 === body }
         }
-        
-        body.run(SKAction.sequence([dragAction, stopBeam, cleanup]))
-        
+
+        body.run(
+            SKAction.sequence([
+                dragAction, stopBeam, cleanup,
+                _getPostAnimation(in: scene, on: body, from: spaceship),
+            ])
+        )
+
         // Optional: BlackHole special handling
         if let blackHole = body as? BlackHole {
             // blackHole.hideJets()  // Implement if needed
@@ -90,32 +102,47 @@ class TractorBeamAnimator {
     }
     func startPostAnimation(on body: CelestialBody, from spaceship: Spaceship) {
         guard let scene = scene else { return }
-        
+        body.run(_getPostAnimation(in: scene, on: body, from: spaceship))
+    }
+
+    func _getPostAnimation(
+        in scene: GameScene,
+        on body: CelestialBody,
+        from spaceship: Spaceship
+    )
+        -> SKAction
+    {
         // Phase 2: Grow, fade, move to upper-right (ease-out) for non-blackholes
         let postDuration: TimeInterval = 3.0
-        let upperRight = CGPoint(x: scene.size.width*2, y: scene.size.height*2)
+        let upperRight = CGPoint(
+            x: scene.size.width * 2,
+            y: scene.size.height * 2
+        )
         let grow = SKAction.scale(to: 3.0, duration: postDuration)
         let fade = SKAction.fadeOut(withDuration: postDuration)
         fade.timingMode = .easeIn
-        let move = SKAction.customAction(withDuration: postDuration) { node, time in
+        let move = SKAction.customAction(withDuration: postDuration) {
+            node,
+            time in
             let t = CGFloat(time / postDuration)
-            let easedT = 1 - (1 - t) * (1 - t) // Quadratic ease-out
+            let easedT = 1 - (1 - t) * (1 - t)  // Quadratic ease-out
             node.position = CGPoint(
-                x: spaceship.position.x + (upperRight.x - spaceship.position.x) * easedT,
-                y: spaceship.position.y + (upperRight.y - spaceship.position.y) * easedT
+                x: spaceship.position.x + (upperRight.x - spaceship.position.x)
+                    * easedT,
+                y: spaceship.position.y + (upperRight.y - spaceship.position.y)
+                    * easedT
             )
         }
         let postGroup = SKAction.group([grow, move])
-        
+
         // Cleanup
         let cleanup = SKAction.run {
             scene.activeStars.removeAll { $0 === body }
             scene.activeBlackHoles.removeAll { $0 === body }
             scene.inactiveCelestialBodies.append(body)  // Recycle
             body.isHidden = true
-            body.alpha = 1.0
         }
-        
-        body.run(SKAction.sequence([postGroup, cleanup]))
+
+        return SKAction.sequence([postGroup, cleanup])
     }
 }

@@ -226,14 +226,14 @@ class GameScene: SKScene, ObservableObject {
 
     override func update(_ currentTime: TimeInterval) {
         frameCount += 1
-        
+
         let zAccBase = zSpeedDelta
         zSpeedDelta = 0.0
         zSpeedAvg = (7 * zSpeedAvg + zSpeedDefault) / 8
-        
+
         let xDelta = spaceship.position.x - centerX
         xApparentVelocity =
-        xApparentVelocity * xDamping + xAccDelta + xDelta
+            xApparentVelocity * xDamping + xAccDelta + xDelta
         xApparentVelocity = min(
             max(-maxSpaceshipSpeedX, xApparentVelocity),
             maxSpaceshipSpeedX
@@ -251,29 +251,27 @@ class GameScene: SKScene, ObservableObject {
         spaceship.position = CGPoint(x: newX, y: newY)
         spaceship.zRotation = CGFloat(xDelta / 128)
         spaceshipPosition = spaceship.position
-        let xCelestialOffset = -xApparentVelocity * celestialScrollSpeedFactor
         crownDelta = 0
-        
+
         ySpeed += yAcc
         yAcc = 0.0
         yOffset += ySpeed
         ySpeed = ySpeed * 1 / 9
         yOffset -= parabola / 8 - 0.8
         yOffset = min(max(-centerY, yOffset), centerY)
-        let yCelestialOffset = -ySpeed * celestialScrollSpeedFactor
-        
+
         if let camera = camera {
             camera.position.y = centerY
             camera.position.x = centerX
         }
-        
+
         if crownDelta != 0 {
             lastCrownInputTime = currentTime
             spaceship.applyThrust(crownDelta: crownDelta)
         } else if currentTime - lastCrownInputTime > 0.25 {
             spaceship.hideThrusters()
         }
-        
+
         let yScrollOffset = min(max(-yMaxOffset, yOffset), yMaxOffset)
         let xScrollOffset = xApparentVelocity / bgScrollSpeed
         galaxyShaderManager.addScrollH(scroll: Float(-xScrollOffset / 1000))
@@ -285,12 +283,12 @@ class GameScene: SKScene, ObservableObject {
             tunnelMode = false
             beginFreeNav()
         }
-        
+
         let offsets = galaxyShaderManager.currentGalaxyOffsets()
         var isGalaxyVisible = false
         var closestOffset: (Float, Float)? = nil
         var minDistance: Float = .greatestFiniteMagnitude
-        
+
         for (offsetH, offsetV) in offsets {
             let distance = sqrt(offsetH * offsetH + offsetV * offsetV)
             if distance < minDistance {
@@ -328,9 +326,9 @@ class GameScene: SKScene, ObservableObject {
         } else {
             timeOnGalaxy = 0
         }
-        print(
-            "updating at location x \(xCelestialOffset) y \(yCelestialOffset) timeOnGalaxy: \(timeOnGalaxy) with first galaxy offset: \(offsets.map{offsetH, offsetV in "h:\(offsetH) v:\(offsetV)"}.first ?? "none" ) and shaderCumulH:\(galaxyShaderManager.getCumulativeScrollH()) V:\(galaxyShaderManager.getCumulativeScrollV())"
-        )
+        //        print(
+        //            "updating at offset x \(xCelestialOffset) y \(yCelestialOffset) timeOnGalaxy: \(timeOnGalaxy) with first galaxy offset: \(offsets.map{offsetH, offsetV in "h:\(offsetH) v:\(offsetV)"}.first ?? "none" ) and shaderCumulH:\(galaxyShaderManager.getCumulativeScrollH()) V:\(galaxyShaderManager.getCumulativeScrollV())"
+        //        )
         if timeOnGalaxy > 60 && !tunnelMode {
             tunnelMode = !tunnelMode
             print("beginning tunnel")
@@ -362,12 +360,12 @@ class GameScene: SKScene, ObservableObject {
             if body.zDepth <= 0 {
                 bodiesToReset.append(body)
             } else {
-                if !body.isBeingTractored {
+                if !body.isBeingTractored {  // tractored are not updated in position (e.g. Z?)
                     body.updatePositionAndScale(
                         centerX: centerX,
                         centerY: centerY,
-                        xOffset: xCelestialOffset,
-                        yOffset: yCelestialOffset,
+                        xOffset: -xScrollOffset,
+                        yOffset: yScrollOffset / 40,
                     )
                     body.zSpeed = max(
                         zSpeedLowerLimit,
@@ -385,14 +383,14 @@ class GameScene: SKScene, ObservableObject {
                 //                }
 
                 let distance = spaceship.position.distance(to: body.position)
-                if body.zDepth <= 50 || !body.hit {
+                if (body.zDepth <= 50 || !body.hit) && !body.isBeingTractored {
                     let collisionThreshold =
                         (spaceship.size.width / 2 + body.size.width / 2)
-                    if distance < collisionThreshold && !body.hit {
+                    if distance < collisionThreshold && (!body.hit) {
                         if body is BlackHole {
                             ySpeed = 0.0
                             xApparentVelocity = 0.0
-                            startOrbitAnimation(for: body as! BlackHole)
+                            //                            startOrbitAnimation(for: body as! BlackHole)
                         } else {
                             body.changeFace(to: "lovey_face")
                             zSpeedDelta += zSpeedDefault * 3 / 4
@@ -455,8 +453,14 @@ class GameScene: SKScene, ObservableObject {
         let count = bodiesToReset.count
 
         if count > 0 {
+            let maxXBody = activeStars.min { bodyA, bodyB in
+                bodyA.currentX.magnitude > bodyB.currentX.magnitude
+            }
+            let maxYBody = activeStars.min { bodyA, bodyB in
+                bodyA.currentY.magnitude > bodyB.currentY.magnitude
+            }
             print(
-                "resetting \(count) bodies with \(activeStars.count) active stars"
+                "reserving \(count) bodies with \(activeStars.count) active stars \(activeStars.count{s in s.isHidden}) hidden; minX at \(maxXBody?.currentX ?? 99_999_999); minY at \(maxYBody?.currentY ?? 99_999_999) (Spaceship X:\(spaceship.position.x) Y:\(spaceship.position.y)"
             )
         }
 
@@ -483,9 +487,10 @@ class GameScene: SKScene, ObservableObject {
             } else {
                 newBody = isBlackHole ? BlackHole() : Star()
             }
+            //            print("reset celestial off set x:\(xScrollOffset) y:\(yScrollOffset)")
             newBody.reset(
-                xOffset: xApparentVelocity / 6,
-                yOffset: -yOffset / 2,
+                xOffset: xScrollOffset * 5,
+                yOffset: -yScrollOffset / 4,
                 zNewSpeed: zSpeedAvg
             )
             newBody.zPosition = -1
