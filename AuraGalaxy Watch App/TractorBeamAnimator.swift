@@ -17,6 +17,7 @@ class TractorBeamAnimator {
     
     func startDragWithBeam(on body: CelestialBody, from spaceship: Spaceship) {
         guard let scene = scene else { return }
+        print("starting tractor beam animation")
         
         body.isBeingTractored = true
         
@@ -73,7 +74,7 @@ class TractorBeamAnimator {
         
         // Cleanup
         let cleanup = SKAction.run {
-            body.removeFromParent()
+            print("cleaning up tractor animation")
             body.isBeingTractored = false
             beamEmitter.removeFromParent()
             scene.activeStars.removeAll { $0 === body }
@@ -89,29 +90,30 @@ class TractorBeamAnimator {
     }
     func startPostAnimation(on body: CelestialBody, from spaceship: Spaceship) {
         guard let scene = scene else { return }
-        print("Starting post anim")
         
         // Phase 2: Grow, fade, move to upper-right (ease-out) for non-blackholes
         let postDuration: TimeInterval = 3.0
-        let upperRight = CGPoint(x: scene.size.width * 0.8, y: scene.size.height * 0.8)
+        let upperRight = CGPoint(x: scene.size.width*2, y: scene.size.height*2)
         let grow = SKAction.scale(to: 3.0, duration: postDuration)
         let fade = SKAction.fadeOut(withDuration: postDuration)
+        fade.timingMode = .easeIn
         let move = SKAction.customAction(withDuration: postDuration) { node, time in
             let t = CGFloat(time / postDuration)
-            let easedT = 1 - (1 - t) * (1 - t)  // Quadratic ease-out
+            let easedT = 1 - (1 - t) * (1 - t) // Quadratic ease-out
             node.position = CGPoint(
                 x: spaceship.position.x + (upperRight.x - spaceship.position.x) * easedT,
                 y: spaceship.position.y + (upperRight.y - spaceship.position.y) * easedT
             )
         }
-        let postGroup = SKAction.group([grow, fade, move])
+        let postGroup = SKAction.group([grow, move])
         
         // Cleanup
         let cleanup = SKAction.run {
-            body.removeFromParent()
             scene.activeStars.removeAll { $0 === body }
             scene.activeBlackHoles.removeAll { $0 === body }
             scene.inactiveCelestialBodies.append(body)  // Recycle
+            body.isHidden = true
+            body.alpha = 1.0
         }
         
         body.run(SKAction.sequence([postGroup, cleanup]))
