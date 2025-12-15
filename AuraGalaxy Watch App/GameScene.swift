@@ -159,7 +159,7 @@ class GameScene: SKScene, ObservableObject {
             )
             var current: SKNode? = node
             while current != nil {
-                if let body = current as? CelestialBody, !body.isBeingTractored
+                if let body = current as? CelestialBody, !body.isBeingTractored && !body.hit
                 {
                     print(
                         "Handling body: \(type(of: body)), frame=\(body.calculateAccumulatedFrame())"
@@ -360,7 +360,7 @@ class GameScene: SKScene, ObservableObject {
             if body.zDepth <= 0 {
                 bodiesToReset.append(body)
             } else {
-                if !body.isBeingTractored {  // tractored are not updated in position (e.g. Z?)
+                if !body.isBeingTractored {  // tractored are not updated in x and y position
                     body.updatePositionAndScale(
                         centerX: centerX,
                         centerY: centerY,
@@ -383,7 +383,7 @@ class GameScene: SKScene, ObservableObject {
                 //                }
 
                 let distance = spaceship.position.distance(to: body.position)
-                if (body.zDepth <= 50 || !body.hit) && !body.isBeingTractored {
+                if (body.zDepth <= 50 || !body.hit) && !body.isBeingTractored { // does this always protect against
                     let collisionThreshold =
                         (spaceship.size.width / 2 + body.size.width / 2)
                     if distance < collisionThreshold && (!body.hit) {
