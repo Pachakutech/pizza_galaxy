@@ -188,7 +188,6 @@ class GameScene: SKScene, ObservableObject {
         print("No body touched")
     }
 
-    // Helper (add to GameScene)
     func distanceFromRect(_ rect: CGRect, toPoint point: CGPoint) -> CGFloat {
         let dx = max(rect.minX - point.x, 0, point.x - rect.maxX)
         let dy = max(rect.minY - point.y, 0, point.y - rect.maxY)
