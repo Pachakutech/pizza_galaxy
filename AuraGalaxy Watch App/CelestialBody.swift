@@ -14,7 +14,7 @@ class CelestialBody: SKSpriteNode, ZDepthBody {
     var zDepth: CGFloat = 100.0
     var mass: CGFloat = 1.0
     var direction: CGFloat = 0
-    var radialMagnitude: CGFloat = 100  // sensitivity to changes
+    var radialMagnitude: CGFloat = 50  // sensitivity to changes
     var xInitialOffset: CGFloat = 0
     var yInitialOffset: CGFloat = 0
     var currentX: CGFloat = 0
@@ -58,6 +58,7 @@ class CelestialBody: SKSpriteNode, ZDepthBody {
         xOffset: CGFloat,
         yOffset: CGFloat
     ) {
+        let firstTime = xCumulativeOffset == 0 && yCumulativeOffset == 0
         xCumulativeOffset += xOffset
         yCumulativeOffset += yOffset
 
@@ -70,6 +71,9 @@ class CelestialBody: SKSpriteNode, ZDepthBody {
         currentY =
             centerY - sin(direction) * radialFactor - yInitialOffset
             - yCumulativeOffset
+        if firstTime {
+            print("initialized star at x:\(currentX) y:\(currentY)")
+        }
         position = CGPoint(x: currentX, y: currentY)
         zPosition = 20 - zDepth / 5  // zDepth 0 -> zPosition 20, zDepth 100 -> zPosition 0
         //        print("Updated \(texture?.description ?? "unknown"): zDepth=\(zDepth), zPosition=\(zPosition), radialFactor=\(radialFactor), pos=\(position), xOffset=\(xOffset), xCumulativeOffset=\(xCumulativeOffset)")
@@ -77,7 +81,7 @@ class CelestialBody: SKSpriteNode, ZDepthBody {
 
     func reset(xOffset: CGFloat, yOffset: CGFloat, zNewSpeed: CGFloat) {
         let radian = generateBiasedRadian(sigma: 6)
-        let radialOffset = CGFloat.random(in: 5...20)
+        let radialOffset = CGFloat.random(in: 5...25)
         direction = (radian + .pi / 2) * (Bool.random() ? 1 : -1)
         xInitialOffset = cos(direction) * radialOffset + xOffset
         yInitialOffset = sin(direction) * radialOffset + yOffset
@@ -89,6 +93,7 @@ class CelestialBody: SKSpriteNode, ZDepthBody {
         setScale(0.1)
         hit = false
         isHidden = false
+        alpha = 1.0
         isBeingTractored = false
     }
 
