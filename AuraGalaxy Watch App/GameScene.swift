@@ -159,7 +159,8 @@ class GameScene: SKScene, ObservableObject {
             )
             var current: SKNode? = node
             while current != nil {
-                if let body = current as? CelestialBody, !body.isBeingTractored && !body.hit
+                if let body = current as? CelestialBody,
+                    !body.bodyState.isBeingTractored && !body.bodyState.hit
                 {
                     print(
                         "Handling body: \(type(of: body)), frame=\(body.calculateAccumulatedFrame())"
@@ -355,23 +356,23 @@ class GameScene: SKScene, ObservableObject {
 
         var bodiesToReset: [CelestialBody] = []
         for body in activeBlackHoles + activeStars {
-            body.zDepth -= body.zSpeed
-            if body.zDepth <= 0 {
+            body.bodyState.zDepth -= body.bodyState.zSpeed
+            if body.bodyState.zDepth <= 0 {
                 bodiesToReset.append(body)
             } else {
-                if !body.isBeingTractored {  // tractored are not updated in x and y position
+                if !body.bodyState.isBeingTractored {  // tractored are not updated in x and y position
                     body.updatePositionAndScale(
                         centerX: centerX,
                         centerY: centerY,
                         xOffset: -xScrollOffset,
                         yOffset: yScrollOffset / 40,
                     )
-                    body.zSpeed = max(
+                    body.bodyState.zSpeed = max(
                         zSpeedLowerLimit,
-                        min(zSpeedUpperLimit, body.zSpeed + zAccBase)
+                        min(zSpeedUpperLimit, body.bodyState.zSpeed + zAccBase)
                     )
                     zSpeedAvg +=
-                        (body.zSpeed - zSpeedAvg)
+                        (body.bodyState.zSpeed - zSpeedAvg)
                         / CGFloat(activeStars.count + 1)
                 }
 
@@ -382,10 +383,12 @@ class GameScene: SKScene, ObservableObject {
                 //                }
 
                 let distance = spaceship.position.distance(to: body.position)
-                if (body.zDepth <= 50 || !body.hit) && !body.isBeingTractored { // does this always protect against
+                if (body.bodyState.zDepth <= 50 || !body.bodyState.hit)
+                    && !body.bodyState.isBeingTractored
+                {  // does this always protect against
                     let collisionThreshold =
                         (spaceship.size.width / 2 + body.size.width / 2)
-                    if distance < collisionThreshold && (!body.hit) {
+                    if distance < collisionThreshold && (!body.bodyState.hit) {
                         if body is BlackHole {
                             ySpeed = 0.0
                             xApparentVelocity = 0.0
@@ -401,12 +404,14 @@ class GameScene: SKScene, ObservableObject {
                                 from: spaceship
                             )
                         }
-                        body.hit = true
+                        body.bodyState.hit = true
                     }
                     applyGravitationalForce(from: body)
                 }
 
-                if body.zDepth <= 90, let blackHole = body as? BlackHole {
+                if body.bodyState.zDepth <= 90,
+                    let blackHole = body as? BlackHole
+                {
                     let jetHitBoxes = blackHole.getJetHitBoxes()
                     for (hitBox, isTop) in jetHitBoxes {
                         let hitBoxWorldPosition = blackHole.convert(
@@ -428,8 +433,9 @@ class GameScene: SKScene, ObservableObject {
 
         if isAnimatingOrbit {
             if let collidedBlackHole = animatingBlackHole {
-                collidedBlackHole.zDepth -= collidedBlackHole.zSpeed
-                if collidedBlackHole.zDepth <= 0 {
+                collidedBlackHole.bodyState.zDepth -=
+                    collidedBlackHole.bodyState.zSpeed
+                if collidedBlackHole.bodyState.zDepth <= 0 {
                     collidedBlackHole.isHidden = true
                     collidedBlackHole.removeFromParent()
                     activeBlackHoles.removeAll { $0 === collidedBlackHole }
@@ -440,10 +446,10 @@ class GameScene: SKScene, ObservableObject {
         }
 
         for body in bodiesToReset {
-            if body.isBeingTractored { continue }
+            if body.bodyState.isBeingTractored { continue }
             body.isHidden = true
             body.removeFromParent()
-            body.zSpeed = zSpeedAvg
+            body.bodyState.zSpeed = zSpeedAvg
             activeBlackHoles.removeAll { $0 === body }
             activeStars.removeAll { $0 === body }
             inactiveCelestialBodies.append(body)
@@ -453,13 +459,15 @@ class GameScene: SKScene, ObservableObject {
 
         if count > 0 {
             let maxXBody = activeStars.min { bodyA, bodyB in
-                bodyA.currentX.magnitude > bodyB.currentX.magnitude
+                bodyA.bodyState.currentX.magnitude
+                    > bodyB.bodyState.currentX.magnitude
             }
             let maxYBody = activeStars.min { bodyA, bodyB in
-                bodyA.currentY.magnitude > bodyB.currentY.magnitude
+                bodyA.bodyState.currentY.magnitude
+                    > bodyB.bodyState.currentY.magnitude
             }
             print(
-                "reserving \(count) bodies with \(activeStars.count) active stars \(activeStars.count{s in s.isHidden}) hidden; minX at \(maxXBody?.currentX ?? 99_999_999); minY at \(maxYBody?.currentY ?? 99_999_999) (Spaceship X:\(spaceship.position.x) Y:\(spaceship.position.y)"
+                "reserving \(count) bodies with \(activeStars.count) active stars \(activeStars.count{s in s.isHidden}) hidden; minX at \(maxXBody?.bodyState.currentX ?? 99_999_999); minY at \(maxYBody?.bodyState.currentY ?? 99_999_999) (Spaceship X:\(spaceship.position.x) Y:\(spaceship.position.y)"
             )
         }
 
@@ -646,7 +654,7 @@ class GameScene: SKScene, ObservableObject {
         _ hitBox: SKSpriteNode,
         _ isTop: Bool
     ) {
-        let baseForce = maxJetForce * (1.0 - body.zDepth / 100.0)
+        let baseForce = maxJetForce * (1.0 - body.bodyState.zDepth / 100.0)
         let hitBoxLocalSpaceshipPos = blackHole.convert(
             spaceship.position,
             from: self
@@ -661,7 +669,7 @@ class GameScene: SKScene, ObservableObject {
         let forceScale = 1.0 - 0.75 * t
         let forceAngle = blackHole.zRotation + (isTop ? 0 : .pi) - .pi / 2
         let forceMagnitude =
-            (baseForce * forceScale * 5.25) / max(1.0, body.zDepth)
+            (baseForce * forceScale * 5.25) / max(1.0, body.bodyState.zDepth)
         applyForceToSpaceship(
             forceAngle: forceAngle,
             forceMagnitude: forceMagnitude

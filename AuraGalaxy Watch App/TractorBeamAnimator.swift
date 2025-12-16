@@ -19,7 +19,7 @@ class TractorBeamAnimator {
         guard let scene = scene else { return }
         print("starting tractor beam animation")
 
-        body.isBeingTractored = true
+        body.bodyState.isBeingTractored = true
 
         // Load tractor beam emitter
         let beamEmitter = SKEmitterNode(fileNamed: "TractorBeam.sks")!
@@ -82,7 +82,7 @@ class TractorBeamAnimator {
         // Cleanup
         let cleanup = SKAction.run {
             print("cleaning up tractor animation")
-            body.isBeingTractored = false
+            body.bodyState.isBeingTractored = false
             beamEmitter.removeFromParent()
             scene.activeStars.removeAll { $0 === body }
             scene.activeBlackHoles.removeAll { $0 === body }
