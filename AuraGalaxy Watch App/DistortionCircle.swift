@@ -1,0 +1,78 @@
+//
+//  DistortionCircle.swift
+//  AuraGalaxy
+//
+//  Created by Pachakutech on 12/20/25.
+//
+
+import SpriteKit
+
+@MainActor
+class DistortionCircle: SKEffectNode {
+    override init() {
+        super.init()
+        addChild(
+            SKSpriteNode(
+                texture: SKTexture(imageNamed: "square_galaxy"),
+                color: .clear,
+                size: CGSize(width: 30, height: 30)
+            )
+        )
+        shader = DistortionCircle.sharedShader
+        setValue(SKAttributeValue(float: 0.15), forAttribute: "a_strength")
+
+        setValue(
+            SKAttributeValue(
+                vectorFloat2: vector_float2(Float(1 / 2), Float(1 / 2))
+            ),
+            forAttribute: "a_offset"
+        )
+    }
+
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    static let sharedShader: SKShader = {
+        let strength = SKAttribute(name: "a_strength", type: .float)  // Default; positive for fisheye (barrel), negative for pincushion
+        let offset = SKAttribute(
+            name: "a_offset",
+            type: .vectorFloat2,
+        )  // Default; positive for fisheye (barrel), negative for pincushion
+        let bugEyeShader = SKShader(
+            source: """
+                void main() {
+                    float strength = a_strength; 
+                    vec2 offset = a_offset;
+
+                    // 1. Bug Eye Distortion Math (Local)
+                    vec2 local_uv = v_tex_coord;
+                    vec2 p = 2.0 * local_uv - 1.0;
+                    float r = length(p);
+                    float power = strength * r;
+                    float distortion = 1.0 + power * (r * r);
+                    p /= distortion;
+                    
+                    // Convert distorted p back to local 0.0-1.0 range
+                    vec2 distorted_local_uv = (p + 1.0) / 2.0;
+
+                    // 2. Map Local to Large Background
+                    // offset: The node's position relative to the background (0.0 to 1.0 range)
+                    // scale: How large the circle is relative to the background (e.g., 40/600 = 0.066)
+                    vec2 bg_uv = offset + (distorted_local_uv - 0.5) * 0.066;
+
+                    // 3. Sampling
+                    if (distorted_local_uv.x < 0.0 || distorted_local_uv.x > 1.0 || 
+                        distorted_local_uv.y < 0.0 || distorted_local_uv.y > 1.0 ||
+                        r > 1.0) {
+                        gl_FragColor = vec4(0.0);
+                    } else {
+                        gl_FragColor = texture2D(u_texture, bg_uv); // Samples your background texture
+                    }
+                }
+                """,
+        )
+        bugEyeShader.attributes = [strength, offset]
+        return bugEyeShader
+    }()
+}

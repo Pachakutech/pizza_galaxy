@@ -8,13 +8,16 @@
 import SpriteKit
 
 @MainActor
-class BlackHole: CelestialBody {
+class BlackHole: SKNode, @MainActor ZDepthBody {
+    var bodyState = BodyState()
     private var jetAngle: CGFloat = 0
     private var jetEmitters: [SKEmitterNode] = []
     private var jetHitBoxes: [SKSpriteNode] = []
+    private var distortionCircle: DistortionCircle = DistortionCircle()
 
-    init() {
-        super.init(textureName: "blackhole_placeholder", size: CGSize(width: 20, height: 20), mass: 0.8)
+    override init() {
+        super.init()
+        addChild(distortionCircle)
         setupJetEffects()
     }
 
@@ -33,45 +36,51 @@ class BlackHole: CelestialBody {
 
         // Top jet emitter and hit box
         guard let topEmitter = SKEmitterNode(fileNamed: "JetEffect") else {
-            return // Skip if asset is missing
+            return  // Skip if asset is missing
         }
         topEmitter.particleBirthRate = 10
-        topEmitter.position = CGPoint(x: 0, y: size.height / 2)
-        topEmitter.zRotation = 0 // Emits outward from north pole
+        topEmitter.position = CGPoint(x: 0, y: 30 / 2)
+        topEmitter.zRotation = 0  // Emits outward from north pole
         topEmitter.zPosition = 1
         addChild(topEmitter)
         jetEmitters.append(topEmitter)
 
-        let topHitBox = SKSpriteNode(color: .clear, size: CGSize(width: hitBoxWidth, height: hitBoxLength))
-        topHitBox.position = CGPoint(x: 0, y: size.height / 2 + hitBoxLength / 2) // Center extends outward
+        let topHitBox = SKSpriteNode(
+            color: .clear,
+            size: CGSize(width: hitBoxWidth, height: hitBoxLength)
+        )
+        topHitBox.position = CGPoint(x: 0, y: 30 / 2 + hitBoxLength / 2)  // Center extends outward
         topHitBox.zPosition = 1
         // Debug outline
-//        topHitBox.run(SKAction.repeatForever(SKAction.sequence([
-//            SKAction.colorize(with: zDepth < 30 ? .red : .green, colorBlendFactor: 0.5, duration: 0.5),
-//            SKAction.colorize(with: .clear, colorBlendFactor: 0.0, duration: 0.5)
-//        ])))
+        //        topHitBox.run(SKAction.repeatForever(SKAction.sequence([
+        //            SKAction.colorize(with: zDepth < 30 ? .red : .green, colorBlendFactor: 0.5, duration: 0.5),
+        //            SKAction.colorize(with: .clear, colorBlendFactor: 0.0, duration: 0.5)
+        //        ])))
         addChild(topHitBox)
         jetHitBoxes.append(topHitBox)
 
         // Bottom jet emitter and hit box
         guard let bottomEmitter = SKEmitterNode(fileNamed: "JetEffect") else {
-            return // Skip if asset is missing
+            return  // Skip if asset is missing
         }
         bottomEmitter.particleBirthRate = 10
-        bottomEmitter.position = CGPoint(x: 0, y: -size.height / 2)
-        bottomEmitter.zRotation = .pi // Emits outward from south pole
+        bottomEmitter.position = CGPoint(x: 0, y: -30 / 2)
+        bottomEmitter.zRotation = .pi  // Emits outward from south pole
         bottomEmitter.zPosition = 1
         addChild(bottomEmitter)
         jetEmitters.append(bottomEmitter)
 
-        let bottomHitBox = SKSpriteNode(color: .clear, size: CGSize(width: hitBoxWidth, height: hitBoxLength))
-        bottomHitBox.position = CGPoint(x: 0, y: -size.height / 2 - hitBoxLength / 2) // Center extends outward
+        let bottomHitBox = SKSpriteNode(
+            color: .clear,
+            size: CGSize(width: hitBoxWidth, height: hitBoxLength)
+        )
+        bottomHitBox.position = CGPoint(x: 0, y: -30 / 2 - hitBoxLength / 2)  // Center extends outward
         bottomHitBox.zPosition = 1
         // Debug outline
-//        bottomHitBox.run(SKAction.repeatForever(SKAction.sequence([
-//            SKAction.colorize(with: zDepth < 90 ? .red : .green, colorBlendFactor: 0.5, duration: 0.5),
-//            SKAction.colorize(with: .clear, colorBlendFactor: 0.0, duration: 0.5)
-//        ])))
+        //        bottomHitBox.run(SKAction.repeatForever(SKAction.sequence([
+        //            SKAction.colorize(with: zDepth < 90 ? .red : .green, colorBlendFactor: 0.5, duration: 0.5),
+        //            SKAction.colorize(with: .clear, colorBlendFactor: 0.0, duration: 0.5)
+        //        ])))
         addChild(bottomHitBox)
         jetHitBoxes.append(bottomHitBox)
     }
@@ -79,7 +88,7 @@ class BlackHole: CelestialBody {
     func updateJetAngle() {
         jetAngle = generateBiasedRadian(sigma: 6, mean: 0)
         self.zRotation = jetAngle
-//        print("Updated black hole rotation: jetAngle=\(jetAngle * 180 / .pi)°")
+        //        print("Updated black hole rotation: jetAngle=\(jetAngle * 180 / .pi)°")
     }
 
     func getJetHitBoxes() -> [(SKSpriteNode, Bool)] {
@@ -89,12 +98,24 @@ class BlackHole: CelestialBody {
         }
     }
 
-    override func reset(xOffset: CGFloat, yOffset: CGFloat, zNewSpeed: CGFloat) {
+    func updateDistortion() {
+        distortionCircle.setValue(
+            SKAttributeValue(
+                vectorFloat2: vector_float2(
+                    Float(bodyState.currentX / 600),
+                    Float(bodyState.currentY / 600)
+                )
+            ),
+            forAttribute: "a_offset"
+        )
+    }
+
+    func reset(xOffset: CGFloat, yOffset: CGFloat, zNewSpeed: CGFloat) {
         jetEmitters.forEach { $0.removeFromParent() }
         jetEmitters.removeAll()
         jetHitBoxes.forEach { $0.removeFromParent() }
         jetHitBoxes.removeAll()
-        super.reset(xOffset: xOffset, yOffset: yOffset, zNewSpeed: zNewSpeed)
+        resetBody(xOffset: xOffset, yOffset: yOffset, zNewSpeed: zNewSpeed)
         setupJetEffects()
     }
 }

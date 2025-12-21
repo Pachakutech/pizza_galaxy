@@ -16,7 +16,7 @@ struct BodyState {
     var zDepth: CGFloat = 100.0
     var mass: CGFloat = 1.0
     var direction: CGFloat = 0
-    var radialMagnitude: CGFloat = 50  // sensitivity to changes
+    var radialMagnitude: CGFloat = 0.1  // sensitivity to changes
     var xInitialOffset: CGFloat = 0
     var yInitialOffset: CGFloat = 0
     var currentX: CGFloat = 0
@@ -26,7 +26,7 @@ struct BodyState {
     var isBeingTractored: Bool = false  // Flag to prevent z-updates/recycling during animation
 }
 
-protocol ZBodyBehavior: SKNode {
+protocol ZDepthBody: SKNode {
     var bodyState: BodyState { get set }
     func resetBody(xOffset: CGFloat, yOffset: CGFloat, zNewSpeed: CGFloat)
     func updatePositionAndScale(
@@ -38,7 +38,7 @@ protocol ZBodyBehavior: SKNode {
     func generateBiasedRadian(sigma: CGFloat, mean: CGFloat) -> CGFloat
 }
 
-extension ZBodyBehavior {
+extension ZDepthBody {
     func updatePositionAndScale(
         centerX: CGFloat,
         centerY: CGFloat,

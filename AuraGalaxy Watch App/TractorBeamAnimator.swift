@@ -100,14 +100,14 @@ class TractorBeamAnimator {
             // blackHole.hideJets()  // Implement if needed
         }
     }
-    func startPostAnimation(on body: CelestialBody, from spaceship: Spaceship) {
+    func startPostAnimation(on body: ZDepthBody, from spaceship: Spaceship) {
         guard let scene = scene else { return }
         body.run(_getPostAnimation(in: scene, on: body, from: spaceship))
     }
 
     func _getPostAnimation(
         in scene: GameScene,
-        on body: CelestialBody,
+        on body: ZDepthBody,
         from spaceship: Spaceship
     )
         -> SKAction

@@ -8,7 +8,7 @@
 import SpriteKit
 
 @MainActor
-class CelestialBody: SKSpriteNode, @MainActor ZBodyBehavior {
+class CelestialBody: SKSpriteNode, @MainActor ZDepthBody {
     var bodyState = BodyState()
     
     var mass: CGFloat = 1.0
