@@ -16,7 +16,7 @@ struct BodyState {
     var zDepth: CGFloat = 100.0
     var mass: CGFloat = 1.0
     var direction: CGFloat = 0
-    var radialMagnitude: CGFloat = 0.1  // sensitivity to changes
+    var radialMagnitude: CGFloat = 120.0 // Desire to expand per Z
     var xInitialOffset: CGFloat = 0
     var yInitialOffset: CGFloat = 0
     var currentX: CGFloat = 0

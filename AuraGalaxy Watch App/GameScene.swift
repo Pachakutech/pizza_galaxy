@@ -11,7 +11,7 @@ import SpriteKit
 import WatchKit
 
 let maxSpaceshipSpeedX: CGFloat = 200.0
-let zSpeedDefault: CGFloat = 60.0 / 100.0
+let zSpeedDefault: CGFloat = 8.0 / 100.0
 let zSpeedUpperLimit = zSpeedDefault * 15.0
 let zSpeedLowerLimit = zSpeedDefault / 10.0
 let bgScrollSpeed: CGFloat = 30.0
@@ -277,7 +277,7 @@ class GameScene: SKScene, ObservableObject {
         galaxyShaderManager.addScrollH(scroll: Float(-xScrollOffset / 1000))
         galaxyShaderManager.addScrollV(scroll: Float(yScrollOffset / 10000))
         tunnelShaderManager.addScrollX(scroll: Float(-xScrollOffset / 1000))
-        tunnelShaderManager.addScrollZ(scroll: Float(zSpeedAvg / 100))
+        tunnelShaderManager.addScrollZ(scroll: Float(zSpeedAvg / 50))
         tunnelShaderManager.addScrollRotate(scroll: Float(xDelta / 500))
         if tunnelShaderManager.isOutOfBounds() && tunnelMode {
             tunnelMode = false
@@ -364,8 +364,8 @@ class GameScene: SKScene, ObservableObject {
                     body.updatePositionAndScale(
                         centerX: centerX,
                         centerY: centerY,
-                        xOffset: -xScrollOffset,
-                        yOffset: yScrollOffset / 40,
+                        xOffset: -xScrollOffset / 16,
+                        yOffset: yScrollOffset / 480,
                     )
                     body.bodyState.zSpeed = max(
                         zSpeedLowerLimit,
@@ -410,7 +410,7 @@ class GameScene: SKScene, ObservableObject {
                 }
 
                 if let blackHole = body as? BlackHole {
-                                        blackHole.updateDistortion()
+                    blackHole.updateDistortion()
                 }
 
                 if body.bodyState.zDepth <= 90,

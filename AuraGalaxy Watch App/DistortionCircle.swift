@@ -9,17 +9,18 @@ import SpriteKit
 
 @MainActor
 class DistortionCircle: SKEffectNode {
+    static let backgroundTexture = SKTexture(imageNamed: "square_galaxy")
     override init() {
         super.init()
         addChild(
             SKSpriteNode(
-                texture: SKTexture(imageNamed: "square_galaxy"),
+                texture: SKTexture(imageNamed: "black_circle"),
                 color: .clear,
-                size: CGSize(width: 30, height: 30)
+                size: CGSize(width: 40, height: 40)
             )
         )
         shader = DistortionCircle.sharedShader
-        setValue(SKAttributeValue(float: 0.15), forAttribute: "a_strength")
+        setValue(SKAttributeValue(float: 13.5), forAttribute: "a_strength")
 
         setValue(
             SKAttributeValue(
@@ -38,7 +39,9 @@ class DistortionCircle: SKEffectNode {
         let offset = SKAttribute(
             name: "a_offset",
             type: .vectorFloat2,
-        )  // Default; positive for fisheye (barrel), negative for pincushion
+        )  // positive for fisheye (barrel), negative for pincushion
+        let backgroundUniforms = [SKUniform(name: "u_background", texture: backgroundTexture)]
+        
         let bugEyeShader = SKShader(
             source: """
                 void main() {
@@ -59,7 +62,7 @@ class DistortionCircle: SKEffectNode {
                     // 2. Map Local to Large Background
                     // offset: The node's position relative to the background (0.0 to 1.0 range)
                     // scale: How large the circle is relative to the background (e.g., 40/600 = 0.066)
-                    vec2 bg_uv = offset + (distorted_local_uv - 0.5) * 0.066;
+                    vec2 bg_uv = offset + (distorted_local_uv - 0.5) * 0.66;
 
                     // 3. Sampling
                     if (distorted_local_uv.x < 0.0 || distorted_local_uv.x > 1.0 || 
@@ -67,12 +70,13 @@ class DistortionCircle: SKEffectNode {
                         r > 1.0) {
                         gl_FragColor = vec4(0.0);
                     } else {
-                        gl_FragColor = texture2D(u_texture, bg_uv); // Samples your background texture
+                        gl_FragColor = texture2D(u_background, bg_uv); // Samples your background texture
                     }
                 }
                 """,
         )
         bugEyeShader.attributes = [strength, offset]
+        bugEyeShader.uniforms = backgroundUniforms
         return bugEyeShader
     }()
 }
