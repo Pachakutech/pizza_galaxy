@@ -78,10 +78,6 @@ class TunnelShaderManager {
     func setGalaxyTexture(forLevel level: Int) {
         let textureName = "background_level_\(level)"
         let texture = SKTexture(imageNamed: textureName)
-        guard texture != nil else {
-            print("Warning: Failed to load texture \(textureName)")
-            return
-        }
         galaxyTextureUniform.textureValue = texture
     }
 
