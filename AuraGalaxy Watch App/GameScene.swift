@@ -37,6 +37,8 @@ class GameScene: SKScene, ObservableObject {
     var activeToppings: [ZDepthBody] = []
     var inactiveZBodies: [ZDepthBody] = []
     private var scores: [ToppingType: Int] = [:]
+    private var scoreBoard = SKLabelNode(text: "")
+    private var scoreBoardTimer: Timer?
     private var backgroundNodes: [SKSpriteNode] = []
     private var crownDelta: Double = 0.0
     private var lastCrownInputTime: TimeInterval = 0.0
@@ -47,7 +49,6 @@ class GameScene: SKScene, ObservableObject {
     private var isAnimatingOrbit: Bool = false
     private var animatingBlackHole: BlackHole?
     private var frameCount: Int = 0
-    private var spawnIntervalFrames = 15
     private var zSpeedDelta: CGFloat = 0.0
     private var zSpeedAvg: CGFloat = zSpeedDefault
     private var xApparentVelocity: CGFloat = 0.0
@@ -56,6 +57,7 @@ class GameScene: SKScene, ObservableObject {
     private var backgroundSprite: SKSpriteNode?
     private var rainbowEffect: SKEmitterNode?
     private var currentLevel = 1
+    private var spawnIntervalFrames = 10
     private let maxCelestialBodies = 44
     private let blackHoleProbability = 0.1
     private let toppingProbability = 1.0
@@ -122,6 +124,15 @@ class GameScene: SKScene, ObservableObject {
             body.isHidden = true
             inactiveZBodies.append(body)
         }
+
+        scoreBoard.fontSize = 24
+        scoreBoard.fontColor = .white
+        scoreBoard.position = CGPoint(
+            x: size.width * 4 / 5,
+            y: size.height * 4 / 5
+        )
+        scoreBoard.isHidden = true
+        addChild(scoreBoard)
     }
 
     private func setupAudioSession() {
@@ -401,9 +412,13 @@ class GameScene: SKScene, ObservableObject {
                                 run(soundAction)
                             }
                             if let topping = body as? Topping {
-                                let score = scores[topping.toppingType] ?? 0
-                                scores[topping.toppingType] = score + 1
+                                let score =
+                                    (scores[topping.toppingType] ?? 0) + 1
+                                scores[topping.toppingType] = score
                                 // Now show score for topping type
+                                scoreBoard.text = "\(topping.toppingType.textureName) #\(score)"
+                                scoreBoard.isHidden = false
+                                
                             }
                             tractorBeamAnimator.startPostAnimation(
                                 on: body,
