@@ -51,7 +51,7 @@ extension ZDepthBody {
         bodyState.yCumulativeOffset += yOffset
 
         let scale =
-            0.1 + (1 - bodyState.zDepth * bodyState.zDepth / 10000) * 0.9
+            0.1 + (1 - bodyState.zDepth / 100) * 0.9
         setScale(scale)
         let radialFactor =
             (100 - bodyState.zDepth) / 100 * bodyState.radialMagnitude
