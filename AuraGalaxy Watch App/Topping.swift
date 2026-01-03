@@ -61,9 +61,12 @@ extension ToppingType {
 
 @MainActor
 class Topping: CelestialBody {
-    var toppingType: ToppingType?
+    var toppingType: ToppingType
 
     init() {
+        toppingType = ToppingType.randomWeighted(weights: [
+            .garlic: 0.1, .tomato: 0.4, .ham: 0.3, .broccoli: 0.2,
+        ])  // Example; fetch from game state
         super.init(
             textureName: "yellow_star",
             size: CGSize(width: 30, height: 30),
@@ -83,9 +86,7 @@ class Topping: CelestialBody {
         toppingType = ToppingType.randomWeighted(weights: [
             .garlic: 0.1, .tomato: 0.4, .ham: 0.3, .broccoli: 0.2,
         ])  // Example; fetch from game state
-        if let texture = toppingType?.textureName {
-            changeFace(to: texture)
-        }
+        changeFace(to: toppingType.textureName)
         // Reapply debug border
         //        color = .red
     }

@@ -13,7 +13,7 @@ class BlackHole: SKNode, @MainActor ZDepthBody {
     private var jetAngle: CGFloat = 0
     private var jetEmitters: [SKEmitterNode] = []
     private var jetHitBoxes: [SKSpriteNode] = []
-    private var distortionCircle: DistortionCircle = DistortionCircle()
+    private var distortionCircle: SKEffectNode = DeepDisCircle()
 
     override init() {
         super.init()
@@ -108,6 +108,12 @@ class BlackHole: SKNode, @MainActor ZDepthBody {
             ),
             forAttribute: "a_offset"
         )
+    }
+    
+    func updateInTunnel(inTunnel: Bool){
+        distortionCircle.removeFromParent()
+        distortionCircle = inTunnel ? DeepDisCircle() : DistortionCircle()
+        addChild(distortionCircle)
     }
 
     func reset(xOffset: CGFloat, yOffset: CGFloat, zNewSpeed: CGFloat) {

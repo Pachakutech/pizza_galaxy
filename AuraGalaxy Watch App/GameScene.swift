@@ -30,13 +30,13 @@ let backgroundHeight: CGFloat = 768
 
 @MainActor
 class GameScene: SKScene, ObservableObject {
-
     @Published var spaceship: Spaceship!
     @Published var spaceshipPosition: CGPoint = .zero
     var activeBlackHoles: [ZDepthBody] = []
     var activeStars: [ZDepthBody] = []
     var activeToppings: [ZDepthBody] = []
     var inactiveZBodies: [ZDepthBody] = []
+    private var scores: [ToppingType: Int] = [:]
     private var backgroundNodes: [SKSpriteNode] = []
     private var crownDelta: Double = 0.0
     private var lastCrownInputTime: TimeInterval = 0.0
@@ -57,7 +57,7 @@ class GameScene: SKScene, ObservableObject {
     private var rainbowEffect: SKEmitterNode?
     private var currentLevel = 1
     private let maxCelestialBodies = 44
-    private let blackHoleProbability = 0.05
+    private let blackHoleProbability = 0.1
     private let toppingProbability = 1.0
     private var yMaxOffset: CGFloat { backgroundHeight - 2.2 * size.height }
     private var centerX: CGFloat { size.width / 2 }
@@ -400,6 +400,11 @@ class GameScene: SKScene, ObservableObject {
                             if let soundAction = collisionSoundAction {
                                 run(soundAction)
                             }
+                            if let topping = body as? Topping {
+                                let score = scores[topping.toppingType] ?? 0
+                                scores[topping.toppingType] = score + 1
+                                // Now show score for topping type
+                            }
                             tractorBeamAnimator.startPostAnimation(
                                 on: body,
                                 from: spaceship
@@ -457,70 +462,96 @@ class GameScene: SKScene, ObservableObject {
             body.bodyState.zSpeed = zSpeedAvg
             activeBlackHoles.removeAll { $0 === body }
             activeStars.removeAll { $0 === body }
-            activeToppings.removeAll{ $0 === body }
+            activeToppings.removeAll { $0 === body }
             inactiveZBodies.append(body)
         }
-//
-//        let count = bodiesToReset.count
-//
-//        if count > 0 {
-//            let maxXBody = activeStars.min { bodyA, bodyB in
-//                bodyA.bodyState.currentX.magnitude
-//                    > bodyB.bodyState.currentX.magnitude
-//            }
-//            let maxYBody = activeStars.min { bodyA, bodyB in
-//                bodyA.bodyState.currentY.magnitude
-//                    > bodyB.bodyState.currentY.magnitude
-//            }
-//            print(
-//                "reserving \(count) bodies with \(activeStars.count) active stars \(activeStars.count{s in s.isHidden}) hidden; minX at \(maxXBody?.bodyState.currentX ?? 99_999_999); minY at \(maxYBody?.bodyState.currentY ?? 99_999_999) (Spaceship X:\(spaceship.position.x) Y:\(spaceship.position.y)"
-//            )
-//        }
-//        
+        //
+        //        let count = bodiesToReset.count
+        //
+        //        if count > 0 {
+        //            let maxXBody = activeStars.min { bodyA, bodyB in
+        //                bodyA.bodyState.currentX.magnitude
+        //                    > bodyB.bodyState.currentX.magnitude
+        //            }
+        //            let maxYBody = activeStars.min { bodyA, bodyB in
+        //                bodyA.bodyState.currentY.magnitude
+        //                    > bodyB.bodyState.currentY.magnitude
+        //            }
+        //            print(
+        //                "reserving \(count) bodies with \(activeStars.count) active stars \(activeStars.count{s in s.isHidden}) hidden; minX at \(maxXBody?.bodyState.currentX ?? 99_999_999); minY at \(maxYBody?.bodyState.currentY ?? 99_999_999) (Spaceship X:\(spaceship.position.x) Y:\(spaceship.position.y)"
+        //            )
+        //        }
+        //
+
+        // Spawn new items
         if frameCount % spawnIntervalFrames == 0 && !isAnimatingOrbit {
             // Spawn celestials (black holes and stars)
             if activeBlackHoles.count + activeStars.count < maxCelestialBodies {
-                let isBlackHole = CGFloat.random(in: 0...1) < blackHoleProbability
+                let isBlackHole =
+                    CGFloat.random(in: 0...1) < blackHoleProbability
                 let celestialXOffset = xScrollOffset * 5
                 let celestialYOffset = -yScrollOffset / 4
-                _ = spawnAndActivateZBody(isBlackHole: isBlackHole, isTopping: false, xOffset: celestialXOffset, yOffset: celestialYOffset, zNewSpeed: zSpeedAvg)
+                _ = spawnAndActivateZBody(
+                    isBlackHole: isBlackHole,
+                    isTopping: false,
+                    xOffset: celestialXOffset,
+                    yOffset: celestialYOffset,
+                    zNewSpeed: zSpeedAvg
+                )
             }
-            
+
             // Spawn toppings separately (using fraction of maxCelestialBodies for maxToppings; adjust fraction as needed)
-            let maxToppings = Int(Double(maxCelestialBodies) * 0.25) // Example: 25% of celestial max; tweak based on game balance
+            let maxToppings = Int(Double(maxCelestialBodies) * 0.25)  // Example: 25% of celestial max; tweak based on game balance
             if activeToppings.count < maxToppings {
                 let toppingProb = tunnelMode ? 0.0 : toppingProbability
                 let isSpawningTopping = CGFloat.random(in: 0...1) < toppingProb
                 if isSpawningTopping {
-                    let toppingXOffset = xScrollOffset * 5 // Or customize offsets/speed if toppings differ
+                    let toppingXOffset = xScrollOffset * 5  // Or customize offsets/speed if toppings differ
                     let toppingYOffset = -yScrollOffset / 4
-                    _ = spawnAndActivateZBody(isBlackHole: false, isTopping: true, xOffset: toppingXOffset, yOffset: toppingYOffset, zNewSpeed: zSpeedAvg)
+                    _ = spawnAndActivateZBody(
+                        isBlackHole: false,
+                        isTopping: true,
+                        xOffset: toppingXOffset,
+                        yOffset: toppingYOffset,
+                        zNewSpeed: zSpeedAvg
+                    )
                 }
             }
         }
-       
 
         spaceshipPosition = spaceship.position
     }
-    
-    private func spawnAndActivateZBody(isBlackHole: Bool, isTopping: Bool, xOffset: CGFloat, yOffset: CGFloat, zNewSpeed: CGFloat) -> ZDepthBody {
+
+    private func spawnAndActivateZBody(
+        isBlackHole: Bool,
+        isTopping: Bool,
+        xOffset: CGFloat,
+        yOffset: CGFloat,
+        zNewSpeed: CGFloat
+    ) -> ZDepthBody {
         let newBody: ZDepthBody = {
             if isBlackHole {
-                if let inactiveBody = inactiveZBodies.first(where: { $0 is BlackHole }) as? BlackHole {
+                if let inactiveBody = inactiveZBodies.first(where: {
+                    $0 is BlackHole
+                }) as? BlackHole {
                     inactiveZBodies.removeAll { $0 === inactiveBody }
                     return inactiveBody
                 } else {
                     return BlackHole()
                 }
             } else if isTopping {
-                if let inactiveBody = inactiveZBodies.first(where: { $0 is Topping }) as? Topping {
+                if let inactiveBody = inactiveZBodies.first(where: {
+                    $0 is Topping
+                }) as? Topping {
                     inactiveZBodies.removeAll { $0 === inactiveBody }
                     return inactiveBody
                 } else {
                     return Topping()
                 }
             } else {
-                if let inactiveBody = inactiveZBodies.first(where: { $0 is Star }) as? Star {
+                if let inactiveBody = inactiveZBodies.first(where: {
+                    $0 is Star
+                }) as? Star {
                     inactiveZBodies.removeAll { $0 === inactiveBody }
                     return inactiveBody
                 } else {
@@ -528,15 +559,16 @@ class GameScene: SKScene, ObservableObject {
                 }
             }
         }()
-        
+
         newBody.zPosition = -1
         if newBody.parent == nil {
             addChild(newBody)
         }
-        
+
         switch newBody {
         case let bh as BlackHole:
             bh.updateJetAngle()
+            bh.updateInTunnel(inTunnel: tunnelMode)
             activeBlackHoles.append(bh)
         case let t as Topping:
             activeToppings.append(t)
@@ -546,11 +578,11 @@ class GameScene: SKScene, ObservableObject {
             // Optional: Handle unexpected subtype
             fatalError("Unexpected body type: \(type(of: newBody))")
         }
-        
+
         newBody.reset(xOffset: xOffset, yOffset: yOffset, zNewSpeed: zNewSpeed)
         return newBody
     }
-     
+
     let firstTunnelProgram = [2.0, 2.0, 2.0, -2.0, -1.0]
     private func beginTunnel() {
         // First get inputs to the tunnel shader manager to be near 0.0

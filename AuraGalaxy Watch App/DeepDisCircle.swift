@@ -1,16 +1,15 @@
 //
-//  DistortionCircle.swift
+//  DeepDisCircle.swift
 //  AuraGalaxy
 //
-//  Created by Pachakutech on 12/20/25.
+//  Created by Pachakutech on 1/2/26.
 //
 
 import SpriteKit
 
 @MainActor
-class DistortionCircle: SKEffectNode {
-    static let backgroundTexture = SKTexture(imageNamed: "square_galaxy")
-//    static let backgroundTexture = SKTexture(imageNamed: "deep_field")
+class DeepDisCircle: SKEffectNode {
+    static let backgroundTexture = SKTexture(imageNamed: "deep_field")
     override init() {
         super.init()
         addChild(
@@ -20,7 +19,7 @@ class DistortionCircle: SKEffectNode {
                 size: CGSize(width: 40, height: 40)
             )
         )
-        shader = DistortionCircle.sharedShader
+        shader = DeepDisCircle.sharedShader
         setValue(SKAttributeValue(float: 13.5), forAttribute: "a_strength")
 
         setValue(
