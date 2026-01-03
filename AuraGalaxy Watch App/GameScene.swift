@@ -35,7 +35,8 @@ class GameScene: SKScene, ObservableObject {
     @Published var spaceshipPosition: CGPoint = .zero
     var activeBlackHoles: [ZDepthBody] = []
     var activeStars: [ZDepthBody] = []
-    var inactiveCelestialBodies: [ZDepthBody] = []
+    var activeToppings: [ZDepthBody] = []
+    var inactiveZBodies: [ZDepthBody] = []
     private var backgroundNodes: [SKSpriteNode] = []
     private var crownDelta: Double = 0.0
     private var lastCrownInputTime: TimeInterval = 0.0
@@ -55,8 +56,9 @@ class GameScene: SKScene, ObservableObject {
     private var backgroundSprite: SKSpriteNode?
     private var rainbowEffect: SKEmitterNode?
     private var currentLevel = 1
-    private let maxCelestialBodies = 34
-    private let blackHoleProbability = 0.2
+    private let maxCelestialBodies = 44
+    private let blackHoleProbability = 0.05
+    private let toppingProbability = 1.0
     private var yMaxOffset: CGFloat { backgroundHeight - 2.2 * size.height }
     private var centerX: CGFloat { size.width / 2 }
     private var centerY: CGFloat { size.height / 2 }
@@ -113,12 +115,12 @@ class GameScene: SKScene, ObservableObject {
         spaceship.zPosition = 10
         addChild(spaceship)
 
-        for _ in 0..<maxCelestialBodies {
+        for _ in 0..<maxCelestialBodies / 4 {
             let isBlackHole = CGFloat.random(in: 0...1) < blackHoleProbability
             let body: ZDepthBody = isBlackHole ? BlackHole() : Star()
             body.zPosition = -1
             body.isHidden = true
-            inactiveCelestialBodies.append(body)
+            inactiveZBodies.append(body)
         }
     }
 
@@ -277,7 +279,7 @@ class GameScene: SKScene, ObservableObject {
         galaxyShaderManager.addScrollH(scroll: Float(-xScrollOffset / 1000))
         galaxyShaderManager.addScrollV(scroll: Float(yScrollOffset / 10000))
         tunnelShaderManager.addScrollX(scroll: Float(-xScrollOffset / 1000))
-        tunnelShaderManager.addScrollZ(scroll: Float(zSpeedAvg / 50))
+        tunnelShaderManager.addScrollZ(scroll: Float(zSpeedAvg / 20))
         tunnelShaderManager.addScrollRotate(scroll: Float(xDelta / 500))
         if tunnelShaderManager.isOutOfBounds() && tunnelMode {
             tunnelMode = false
@@ -354,11 +356,12 @@ class GameScene: SKScene, ObservableObject {
         //            }
         //        }
 
-        var bodiesToReset: [ZDepthBody] = []
-        for body in activeBlackHoles + activeStars {
+        // Perform apparent physics
+        var bodiesToReserve: [ZDepthBody] = []
+        for body in activeBlackHoles + activeStars + activeToppings {
             body.bodyState.zDepth -= body.bodyState.zSpeed
             if body.bodyState.zDepth <= 0 {
-                bodiesToReset.append(body)
+                bodiesToReserve.append(body)
             } else {
                 if !body.bodyState.isBeingTractored {  // tractored are not updated in x and y position
                     body.updatePositionAndScale(
@@ -392,9 +395,7 @@ class GameScene: SKScene, ObservableObject {
                         if body is BlackHole {
                             ySpeed = 0.0
                             xApparentVelocity = 0.0
-                            //                            startOrbitAnimation(for: body as! BlackHole)
                         } else {
-                            //                            body.changeFace(to: "lovey_face")
                             zSpeedDelta += zSpeedDefault * 3 / 4
                             if let soundAction = collisionSoundAction {
                                 run(soundAction)
@@ -443,82 +444,113 @@ class GameScene: SKScene, ObservableObject {
                     collidedBlackHole.isHidden = true
                     collidedBlackHole.removeFromParent()
                     activeBlackHoles.removeAll { $0 === collidedBlackHole }
-                    inactiveCelestialBodies.append(collidedBlackHole)
+                    inactiveZBodies.append(collidedBlackHole)
                 }
             }
             return
         }
 
-        for body in bodiesToReset {
+        for body in bodiesToReserve {
             if body.bodyState.isBeingTractored { continue }
             body.isHidden = true
             body.removeFromParent()
             body.bodyState.zSpeed = zSpeedAvg
             activeBlackHoles.removeAll { $0 === body }
             activeStars.removeAll { $0 === body }
-            inactiveCelestialBodies.append(body)
+            activeToppings.removeAll{ $0 === body }
+            inactiveZBodies.append(body)
         }
-
-        let count = bodiesToReset.count
-
-        if count > 0 {
-            let maxXBody = activeStars.min { bodyA, bodyB in
-                bodyA.bodyState.currentX.magnitude
-                    > bodyB.bodyState.currentX.magnitude
+//
+//        let count = bodiesToReset.count
+//
+//        if count > 0 {
+//            let maxXBody = activeStars.min { bodyA, bodyB in
+//                bodyA.bodyState.currentX.magnitude
+//                    > bodyB.bodyState.currentX.magnitude
+//            }
+//            let maxYBody = activeStars.min { bodyA, bodyB in
+//                bodyA.bodyState.currentY.magnitude
+//                    > bodyB.bodyState.currentY.magnitude
+//            }
+//            print(
+//                "reserving \(count) bodies with \(activeStars.count) active stars \(activeStars.count{s in s.isHidden}) hidden; minX at \(maxXBody?.bodyState.currentX ?? 99_999_999); minY at \(maxYBody?.bodyState.currentY ?? 99_999_999) (Spaceship X:\(spaceship.position.x) Y:\(spaceship.position.y)"
+//            )
+//        }
+//        
+        if frameCount % spawnIntervalFrames == 0 && !isAnimatingOrbit {
+            // Spawn celestials (black holes and stars)
+            if activeBlackHoles.count + activeStars.count < maxCelestialBodies {
+                let isBlackHole = CGFloat.random(in: 0...1) < blackHoleProbability
+                let celestialXOffset = xScrollOffset * 5
+                let celestialYOffset = -yScrollOffset / 4
+                _ = spawnAndActivateZBody(isBlackHole: isBlackHole, isTopping: false, xOffset: celestialXOffset, yOffset: celestialYOffset, zNewSpeed: zSpeedAvg)
             }
-            let maxYBody = activeStars.min { bodyA, bodyB in
-                bodyA.bodyState.currentY.magnitude
-                    > bodyB.bodyState.currentY.magnitude
-            }
-            print(
-                "reserving \(count) bodies with \(activeStars.count) active stars \(activeStars.count{s in s.isHidden}) hidden; minX at \(maxXBody?.bodyState.currentX ?? 99_999_999); minY at \(maxYBody?.bodyState.currentY ?? 99_999_999) (Spaceship X:\(spaceship.position.x) Y:\(spaceship.position.y)"
-            )
-        }
-
-        if frameCount % spawnIntervalFrames == 0
-            && (activeBlackHoles.count + activeStars.count) < maxCelestialBodies
-            && !isAnimatingOrbit
-        {
-            let isBlackHole = CGFloat.random(in: 0...1) < blackHoleProbability
-            let newBody: ZDepthBody
-            if isBlackHole,
-                let inactiveBody = inactiveCelestialBodies.first(where: {
-                    $0 is BlackHole
-                })
-            {
-                newBody = inactiveBody
-                inactiveCelestialBodies.removeAll { $0 === inactiveBody }
-            } else if !isBlackHole,
-                let inactiveBody = inactiveCelestialBodies.first(where: {
-                    $0 is Star
-                })
-            {
-                newBody = inactiveBody
-                inactiveCelestialBodies.removeAll { $0 === inactiveBody }
-            } else {
-                newBody = isBlackHole ? BlackHole() : Star()
-            }
-            //            print("reset celestial off set x:\(xScrollOffset) y:\(yScrollOffset)")
-            newBody.resetBody(
-                xOffset: xScrollOffset * 5,
-                yOffset: -yScrollOffset / 4,
-                zNewSpeed: zSpeedAvg
-            )
-            newBody.zPosition = -1
-            if newBody.parent == nil {
-                addChild(newBody)
-            }
-            if isBlackHole {
-                (newBody as? BlackHole)?.updateJetAngle()
-                activeBlackHoles.append(newBody as! BlackHole)
-            } else {
-                activeStars.append(newBody as! Star)
+            
+            // Spawn toppings separately (using fraction of maxCelestialBodies for maxToppings; adjust fraction as needed)
+            let maxToppings = Int(Double(maxCelestialBodies) * 0.25) // Example: 25% of celestial max; tweak based on game balance
+            if activeToppings.count < maxToppings {
+                let toppingProb = tunnelMode ? 0.0 : toppingProbability
+                let isSpawningTopping = CGFloat.random(in: 0...1) < toppingProb
+                if isSpawningTopping {
+                    let toppingXOffset = xScrollOffset * 5 // Or customize offsets/speed if toppings differ
+                    let toppingYOffset = -yScrollOffset / 4
+                    _ = spawnAndActivateZBody(isBlackHole: false, isTopping: true, xOffset: toppingXOffset, yOffset: toppingYOffset, zNewSpeed: zSpeedAvg)
+                }
             }
         }
+       
 
         spaceshipPosition = spaceship.position
     }
-
+    
+    private func spawnAndActivateZBody(isBlackHole: Bool, isTopping: Bool, xOffset: CGFloat, yOffset: CGFloat, zNewSpeed: CGFloat) -> ZDepthBody {
+        let newBody: ZDepthBody = {
+            if isBlackHole {
+                if let inactiveBody = inactiveZBodies.first(where: { $0 is BlackHole }) as? BlackHole {
+                    inactiveZBodies.removeAll { $0 === inactiveBody }
+                    return inactiveBody
+                } else {
+                    return BlackHole()
+                }
+            } else if isTopping {
+                if let inactiveBody = inactiveZBodies.first(where: { $0 is Topping }) as? Topping {
+                    inactiveZBodies.removeAll { $0 === inactiveBody }
+                    return inactiveBody
+                } else {
+                    return Topping()
+                }
+            } else {
+                if let inactiveBody = inactiveZBodies.first(where: { $0 is Star }) as? Star {
+                    inactiveZBodies.removeAll { $0 === inactiveBody }
+                    return inactiveBody
+                } else {
+                    return Star()
+                }
+            }
+        }()
+        
+        newBody.zPosition = -1
+        if newBody.parent == nil {
+            addChild(newBody)
+        }
+        
+        switch newBody {
+        case let bh as BlackHole:
+            bh.updateJetAngle()
+            activeBlackHoles.append(bh)
+        case let t as Topping:
+            activeToppings.append(t)
+        case let s as Star:
+            activeStars.append(s)
+        default:
+            // Optional: Handle unexpected subtype
+            fatalError("Unexpected body type: \(type(of: newBody))")
+        }
+        
+        newBody.reset(xOffset: xOffset, yOffset: yOffset, zNewSpeed: zNewSpeed)
+        return newBody
+    }
+     
     let firstTunnelProgram = [2.0, 2.0, 2.0, -2.0, -1.0]
     private func beginTunnel() {
         // First get inputs to the tunnel shader manager to be near 0.0
@@ -620,10 +652,10 @@ class GameScene: SKScene, ObservableObject {
                 $0.isHidden = true
                 $0.removeFromParent()
             }
-            self?.inactiveCelestialBodies.append(
+            self?.inactiveZBodies.append(
                 contentsOf: self?.activeBlackHoles ?? []
             )
-            self?.inactiveCelestialBodies.append(
+            self?.inactiveZBodies.append(
                 contentsOf: self?.activeStars ?? []
             )
             self?.activeBlackHoles.removeAll()
@@ -671,6 +703,9 @@ class GameScene: SKScene, ObservableObject {
         let t = max(0.0, min(1.0, (relativeY - baseY) / (tipY - baseY)))
         let forceScale = 1.0 - 0.75 * t
         let forceAngle = blackHole.zRotation + (isTop ? 0 : .pi) - .pi / 2
+        print(
+            "Applying Jet at Angle \(forceAngle) for rotation \(blackHole.zRotation)"
+        )
         let forceMagnitude =
             (baseForce * forceScale * 5.25)
             / max(1.0, blackHole.bodyState.zDepth)
@@ -697,6 +732,7 @@ class GameScene: SKScene, ObservableObject {
         let forceJ = sin(forceAngle) * forceMagnitude
         xAccDelta += forceI * 0.7
         yAcc += forceJ * 0.7
+        // TODO: show a debug/display arrow of force
     }
 
     func updateCrownDelta(_ delta: Double) {

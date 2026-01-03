@@ -18,7 +18,7 @@ class TunnelShaderManager {
     private var backgroundTexture2Uniform: SKUniform
 
     init() {
-        let texture2 = SKTexture(imageNamed: "background_2")
+        let texture2 = SKTexture(imageNamed: "deep_field")
         let galaxyTexture = SKTexture(imageNamed: "background_level_1")
         let backgroundTexture2 = SKTexture(imageNamed: "background_3")
         galaxyTextureUniform = SKUniform(name: "u_background", texture: galaxyTexture)

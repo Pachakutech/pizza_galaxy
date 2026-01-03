@@ -39,7 +39,7 @@ class BlackHole: SKNode, @MainActor ZDepthBody {
             return  // Skip if asset is missing
         }
         topEmitter.particleBirthRate = 10
-        topEmitter.position = CGPoint(x: 0, y: 30 / 2)
+        topEmitter.position = CGPoint(x: 0, y: 40 / 2)
         topEmitter.zRotation = 0  // Emits outward from north pole
         topEmitter.zPosition = 1
         addChild(topEmitter)
@@ -49,7 +49,7 @@ class BlackHole: SKNode, @MainActor ZDepthBody {
             color: .clear,
             size: CGSize(width: hitBoxWidth, height: hitBoxLength)
         )
-        topHitBox.position = CGPoint(x: 0, y: 30 / 2 + hitBoxLength / 2)  // Center extends outward
+        topHitBox.position = CGPoint(x: 0, y: 40 / 2 + hitBoxLength / 2)  // Center extends outward
         topHitBox.zPosition = 1
         // Debug outline
         //        topHitBox.run(SKAction.repeatForever(SKAction.sequence([
@@ -64,7 +64,7 @@ class BlackHole: SKNode, @MainActor ZDepthBody {
             return  // Skip if asset is missing
         }
         bottomEmitter.particleBirthRate = 10
-        bottomEmitter.position = CGPoint(x: 0, y: -30 / 2)
+        bottomEmitter.position = CGPoint(x: 0, y: -40 / 2)
         bottomEmitter.zRotation = .pi  // Emits outward from south pole
         bottomEmitter.zPosition = 1
         addChild(bottomEmitter)
@@ -74,7 +74,7 @@ class BlackHole: SKNode, @MainActor ZDepthBody {
             color: .clear,
             size: CGSize(width: hitBoxWidth, height: hitBoxLength)
         )
-        bottomHitBox.position = CGPoint(x: 0, y: -30 / 2 - hitBoxLength / 2)  // Center extends outward
+        bottomHitBox.position = CGPoint(x: 0, y: -40 / 2 - hitBoxLength / 2)  // Center extends outward
         bottomHitBox.zPosition = 1
         // Debug outline
         //        bottomHitBox.run(SKAction.repeatForever(SKAction.sequence([
@@ -88,7 +88,7 @@ class BlackHole: SKNode, @MainActor ZDepthBody {
     func updateJetAngle() {
         jetAngle = generateBiasedRadian(sigma: 6, mean: 0)
         self.zRotation = jetAngle
-        //        print("Updated black hole rotation: jetAngle=\(jetAngle * 180 / .pi)°")
+        print("Updated black hole rotation: jetAngle=\(jetAngle * 180 / .pi)°")
     }
 
     func getJetHitBoxes() -> [(SKSpriteNode, Bool)] {
@@ -111,11 +111,11 @@ class BlackHole: SKNode, @MainActor ZDepthBody {
     }
 
     func reset(xOffset: CGFloat, yOffset: CGFloat, zNewSpeed: CGFloat) {
+        resetToRing(xOffset: xOffset, yOffset: yOffset, zNewSpeed: zNewSpeed)
         jetEmitters.forEach { $0.removeFromParent() }
         jetEmitters.removeAll()
         jetHitBoxes.forEach { $0.removeFromParent() }
         jetHitBoxes.removeAll()
-        resetBody(xOffset: xOffset, yOffset: yOffset, zNewSpeed: zNewSpeed)
         setupJetEffects()
     }
 }

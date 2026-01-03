@@ -139,7 +139,7 @@ class TractorBeamAnimator {
         let cleanup = SKAction.run {
             scene.activeStars.removeAll { $0 === body }
             scene.activeBlackHoles.removeAll { $0 === body }
-            scene.inactiveCelestialBodies.append(body)  // Recycle
+            scene.inactiveZBodies.append(body)  // Recycle
             body.isHidden = true
         }
 

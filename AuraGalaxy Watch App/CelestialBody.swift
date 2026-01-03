@@ -23,25 +23,16 @@ class CelestialBody: SKSpriteNode, @MainActor ZDepthBody {
         super.init(texture: texture, color: .clear, size: size)
         self.mass = mass
         isUserInteractionEnabled = true  // Enable touch interaction (though handled at scene level)
-        setupPhysicsBody()
     }
 
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    private func setupPhysicsBody() {
-        physicsBody = SKPhysicsBody(circleOfRadius: size.width / 2)
-        physicsBody?.isDynamic = false
-        physicsBody?.categoryBitMask = 2
-        physicsBody?.collisionBitMask = 0
-        physicsBody?.contactTestBitMask = 1
-    }
-
     func changeFace(to textureName: String) {
         texture = SKTexture(imageNamed: textureName)
     }
     func reset(xOffset: CGFloat, yOffset: CGFloat, zNewSpeed: CGFloat) {
-        resetBody(xOffset: xOffset, yOffset: yOffset, zNewSpeed: zNewSpeed)
+        resetToRing(xOffset: xOffset, yOffset: yOffset, zNewSpeed: zNewSpeed)
     }
 }

@@ -28,7 +28,7 @@ struct BodyState {
 
 protocol ZDepthBody: SKNode {
     var bodyState: BodyState { get set }
-    func resetBody(xOffset: CGFloat, yOffset: CGFloat, zNewSpeed: CGFloat)
+    func reset(xOffset: CGFloat, yOffset: CGFloat, zNewSpeed: CGFloat)
     func updatePositionAndScale(
         centerX: CGFloat,
         centerY: CGFloat,
@@ -73,7 +73,7 @@ extension ZDepthBody {
         //        print("Updated \(texture?.description ?? "unknown"): zDepth=\(zDepth), zPosition=\(zPosition), radialFactor=\(radialFactor), pos=\(position), xOffset=\(xOffset), xCumulativeOffset=\(xCumulativeOffset)")
     }
 
-    func resetBody(xOffset: CGFloat, yOffset: CGFloat, zNewSpeed: CGFloat) {
+    func resetToRing(xOffset: CGFloat, yOffset: CGFloat, zNewSpeed: CGFloat) {
         let radian = generateBiasedRadian(sigma: 6)
         let radialOffset = CGFloat.random(in: 5...25)
         bodyState.direction = (radian + .pi / 2) * (Bool.random() ? 1 : -1)

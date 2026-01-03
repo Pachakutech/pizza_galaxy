@@ -9,7 +9,8 @@ import SpriteKit
 
 @MainActor
 class DistortionCircle: SKEffectNode {
-    static let backgroundTexture = SKTexture(imageNamed: "square_galaxy")
+//    static let backgroundTexture = SKTexture(imageNamed: "square_galaxy")
+    static let backgroundTexture = SKTexture(imageNamed: "deep_field")
     override init() {
         super.init()
         addChild(

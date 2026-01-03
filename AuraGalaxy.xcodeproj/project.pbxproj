@@ -38,9 +38,22 @@
 		55B791E12DE7D0E700E5EA12 /* WatchKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WatchKit.framework; path = Platforms/WatchOS.platform/Developer/SDKs/WatchOS11.4.sdk/System/Library/Frameworks/WatchKit.framework; sourceTree = DEVELOPER_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		5535D36D2F08B0E700107769 /* Exceptions for "AuraGalaxy Watch App" folder in "AuraGalaxy Watch App" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Untitled.swift,
+			);
+			target = 55B791A12DE6319A00E5EA12 /* AuraGalaxy Watch App */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		55B791A62DE6319A00E5EA12 /* AuraGalaxy Watch App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				5535D36D2F08B0E700107769 /* Exceptions for "AuraGalaxy Watch App" folder in "AuraGalaxy Watch App" target */,
+			);
 			path = "AuraGalaxy Watch App";
 			sourceTree = "<group>";
 		};

@@ -1,2 +1,4 @@
 make Star subclasses and store scores of each
 fix tractor beam
+black hole should deprive above scores
+put in a force display
