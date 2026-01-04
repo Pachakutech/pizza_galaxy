@@ -48,7 +48,7 @@ extension ZDepthBody {
         let firstTime =
             bodyState.xCumulativeOffset == 0 && bodyState.yCumulativeOffset == 0
         bodyState.xCumulativeOffset += xOffset
-        bodyState.yCumulativeOffset += yOffset
+        bodyState.yCumulativeOffset += yOffset * (1 - bodyState.zDepth/100)
 
         let scale =
             0.1 + (1 - bodyState.zDepth / 100) * 0.9
@@ -75,7 +75,7 @@ extension ZDepthBody {
 
     func resetToRing(xOffset: CGFloat, yOffset: CGFloat, zNewSpeed: CGFloat) {
         let radian = generateBiasedRadian(sigma: 6)
-        let radialOffset = CGFloat.random(in: 5...25)
+        let radialOffset = CGFloat.random(in: 1...200)
         bodyState.direction = (radian + .pi / 2) * (Bool.random() ? 1 : -1)
         bodyState.xInitialOffset =
             cos(bodyState.direction) * radialOffset + xOffset
