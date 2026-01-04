@@ -37,7 +37,9 @@ class GameScene: SKScene, ObservableObject {
     var activeToppings: [ZDepthBody] = []
     var inactiveZBodies: [ZDepthBody] = []
     private var scores: [ToppingType: Int] = [:]
-    private var scoreBoard = SKLabelNode(text: "")
+    private var scoreboard = SKNode()
+    private var scoreboardIcon = SKSpriteNode(imageNamed: "yellow_star")
+    private var scoreboardScore = SKLabelNode(text: "")
     private var scoreBoardTimer: Timer?
     private var backgroundNodes: [SKSpriteNode] = []
     private var crownDelta: Double = 0.0
@@ -57,8 +59,8 @@ class GameScene: SKScene, ObservableObject {
     private var backgroundSprite: SKSpriteNode?
     private var rainbowEffect: SKEmitterNode?
     private var currentLevel = 1
-    private var spawnIntervalFrames = 10
-    private let maxCelestialBodies = 44
+    private var spawnIntervalFrames = 5
+    private let maxCelestialBodies = 54
     private let blackHoleProbability = 0.1
     private let toppingProbability = 1.0
     private var yMaxOffset: CGFloat { backgroundHeight - 2.2 * size.height }
@@ -125,14 +127,26 @@ class GameScene: SKScene, ObservableObject {
             inactiveZBodies.append(body)
         }
 
-        scoreBoard.fontSize = 24
-        scoreBoard.fontColor = .white
-        scoreBoard.position = CGPoint(
+        scoreboardIcon.size.width = 20
+        scoreboardIcon.size.height = 20
+        scoreboardIcon.position = CGPoint(x: 24.0, y: 0.0)
+        scoreboard.addChild(scoreboardIcon)
+
+        scoreboardScore.horizontalAlignmentMode = .right
+        scoreboardScore.fontSize = 22
+        scoreboardScore.fontColor = .white
+        scoreboardScore.position = CGPoint(
+            x: scoreboardIcon.position.x - 14.0,
+            y: scoreboardIcon.position.y - 9.0
+        )
+        scoreboard.addChild(scoreboardScore)
+
+        scoreboard.position = CGPoint(
             x: size.width * 4 / 5,
             y: size.height * 4 / 5
         )
-        scoreBoard.isHidden = true
-        addChild(scoreBoard)
+        scoreboard.isHidden = true
+        addChild(scoreboard)
     }
 
     private func setupAudioSession() {
@@ -378,8 +392,8 @@ class GameScene: SKScene, ObservableObject {
                     body.updatePositionAndScale(
                         centerX: centerX,
                         centerY: centerY,
-                        xOffset: -xScrollOffset / 16,
-                        yOffset: yScrollOffset / 480,
+                        xOffset: -xScrollOffset / 8,
+                        yOffset: yScrollOffset / 80,
                     )
                     body.bodyState.zSpeed = max(
                         zSpeedLowerLimit,
@@ -415,10 +429,12 @@ class GameScene: SKScene, ObservableObject {
                                 let score =
                                     (scores[topping.toppingType] ?? 0) + 1
                                 scores[topping.toppingType] = score
-                                // Now show score for topping type
-                                scoreBoard.text = "\(topping.toppingType.textureName) #\(score)"
-                                scoreBoard.isHidden = false
-                                
+                                // Show score for topping type
+                                scoreboardIcon.texture =
+                                    topping.toppingType.texture
+                                scoreboardScore.text = "\(score)"
+                                scoreboard.isHidden = false
+
                             }
                             tractorBeamAnimator.startPostAnimation(
                                 on: body,
@@ -504,13 +520,12 @@ class GameScene: SKScene, ObservableObject {
             if activeBlackHoles.count + activeStars.count < maxCelestialBodies {
                 let isBlackHole =
                     CGFloat.random(in: 0...1) < blackHoleProbability
-                let celestialXOffset = xScrollOffset * 5
-                let celestialYOffset = -yScrollOffset / 4
+                let celestialYOffset = -yScrollOffset
                 _ = spawnAndActivateZBody(
                     isBlackHole: isBlackHole,
                     isTopping: false,
-                    xOffset: celestialXOffset,
-                    yOffset: celestialYOffset,
+                    xOffset: xScrollOffset,
+                    yOffset: -yScrollOffset,
                     zNewSpeed: zSpeedAvg
                 )
             }
@@ -521,13 +536,11 @@ class GameScene: SKScene, ObservableObject {
                 let toppingProb = tunnelMode ? 0.0 : toppingProbability
                 let isSpawningTopping = CGFloat.random(in: 0...1) < toppingProb
                 if isSpawningTopping {
-                    let toppingXOffset = xScrollOffset * 5  // Or customize offsets/speed if toppings differ
-                    let toppingYOffset = -yScrollOffset / 4
                     _ = spawnAndActivateZBody(
                         isBlackHole: false,
                         isTopping: true,
-                        xOffset: toppingXOffset,
-                        yOffset: toppingYOffset,
+                        xOffset: xScrollOffset,
+                        yOffset: -yScrollOffset,
                         zNewSpeed: zSpeedAvg
                     )
                 }
@@ -594,7 +607,11 @@ class GameScene: SKScene, ObservableObject {
             fatalError("Unexpected body type: \(type(of: newBody))")
         }
 
-        newBody.reset(xOffset: xOffset, yOffset: yOffset, zNewSpeed: zNewSpeed)
+        newBody.reset(
+            xOffset: tunnelMode ? 0.0 : xOffset * 10,
+            yOffset: tunnelMode ? 0.0 : yOffset,
+            zNewSpeed: zNewSpeed
+        )
         return newBody
     }
 

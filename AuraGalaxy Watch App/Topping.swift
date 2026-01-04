@@ -33,7 +33,19 @@ extension ToppingType {
         case .broccoli: return "broccoli"
         }
     }
-
+    
+    private static let textureCache: [ToppingType: SKTexture] = {
+           var cache = [ToppingType: SKTexture]()
+           for topping in ToppingType.allCases {
+               cache[topping] = SKTexture(imageNamed: topping.textureName)
+           }
+           return cache
+       }()
+    
+    var texture: SKTexture {
+           return Self.textureCache[self] ?? SKTexture(imageNamed: "yellow_star")
+       }
+    
     static func randomWeighted(weights: [ToppingType: Double]) -> ToppingType {
         let allCases = Self.allCases
         let totalWeight = weights.values.reduce(0, +)
