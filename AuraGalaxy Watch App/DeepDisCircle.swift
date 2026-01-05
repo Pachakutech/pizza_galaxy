@@ -20,7 +20,7 @@ class DeepDisCircle: SKEffectNode {
             )
         )
         shader = DeepDisCircle.sharedShader
-        setValue(SKAttributeValue(float: 13.5), forAttribute: "a_strength")
+        setValue(SKAttributeValue(float: 23.5), forAttribute: "a_strength")
 
         setValue(
             SKAttributeValue(
