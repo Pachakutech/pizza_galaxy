@@ -33,19 +33,19 @@ extension ToppingType {
         case .broccoli: return "broccoli"
         }
     }
-    
+
     private static let textureCache: [ToppingType: SKTexture] = {
-           var cache = [ToppingType: SKTexture]()
-           for topping in ToppingType.allCases {
-               cache[topping] = SKTexture(imageNamed: topping.textureName)
-           }
-           return cache
-       }()
-    
+        var cache = [ToppingType: SKTexture]()
+        for topping in ToppingType.allCases {
+            cache[topping] = SKTexture(imageNamed: topping.textureName)
+        }
+        return cache
+    }()
+
     var texture: SKTexture {
-           return Self.textureCache[self] ?? SKTexture(imageNamed: "yellow_star")
-       }
-    
+        return Self.textureCache[self] ?? SKTexture(imageNamed: "yellow_star")
+    }
+
     static func randomWeighted(weights: [ToppingType: Double]) -> ToppingType {
         let allCases = Self.allCases
         let totalWeight = weights.values.reduce(0, +)
@@ -96,7 +96,8 @@ class Topping: CelestialBody {
     {
         super.reset(xOffset: xOffset, yOffset: yOffset, zNewSpeed: zNewSpeed)
         toppingType = ToppingType.randomWeighted(weights: [
-            .garlic: 0.1, .tomato: 0.4, .ham: 0.3, .broccoli: 0.2,
+            .garlic: 0.1, .tomato: 0.1, .ham: 0.1, .broccoli: 0.2, .bacon: 0.1,
+            .pepperoni: 0.1, .shroom: 0.1, .jalapeno: 0.1, .onion: 0.1,
         ])  // Example; fetch from game state
         changeFace(to: toppingType.textureName)
         // Reapply debug border
