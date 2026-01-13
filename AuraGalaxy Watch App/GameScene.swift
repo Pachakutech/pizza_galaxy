@@ -10,15 +10,15 @@ import Combine
 import SpriteKit
 import WatchKit
 
-let maxSpeedX: CGFloat = 200.0
-let maxSpeedY: CGFloat = 200.0
-let zSpeedDefault: CGFloat = 8.0 / 100.0
+let maxSpeedX: CGFloat = 28.8
+let maxSpeedY: CGFloat = 28.8
+let zSpeedDefault: CGFloat = 20.0 / 100.0
 let zSpeedUpperLimit = zSpeedDefault * 15.0
 let zSpeedLowerLimit = zSpeedDefault / 10.0
 let bgScrollSpeed: CGFloat = 30.0
 let celestialScrollSpeedFactor: CGFloat = 1.0 / 60.0
 let maxJetForce: CGFloat = 2000.0
-let spaceshipMass: CGFloat = 1.5
+let spaceshipMass: CGFloat = 100.5
 let gravityFalloffPower: CGFloat = 1.0
 let jetForceScale: CGFloat = 5.25
 let xyDamping: CGFloat = 0.95
@@ -53,11 +53,10 @@ class GameScene: SKScene, ObservableObject {
     private var crownDelta: Double = 0.0
     private var lastCrownInputTime: TimeInterval = 0.0
     private var lastUpdateTime: TimeInterval = 0.0
-    private var yOffset: CGFloat = verticalOffsetDefault
+    private var dragCoef: CGFloat = 0.0
     private var ySpeed: CGFloat = 0.0
     private var yAcc: CGFloat = 0.0
     private var yBackgroundOffset: CGFloat = 0.0
-    private var xOffset: CGFloat = horizontalOffsetDefault
     private var xSpeed: CGFloat = 0.0
     private var xAcc: CGFloat = 0.0
     private var isAnimatingOrbit: Bool = false
@@ -131,6 +130,12 @@ class GameScene: SKScene, ObservableObject {
         addChild(spaceship)
 
         for _ in 0..<maxCelestialBodies / 4 {
+            let body: ZDepthBody = Topping()
+            body.zPosition = -1
+            body.isHidden = true
+            inactiveZBodies.append(body)
+        }
+        for _ in 0..<maxCelestialBodies {
             let isBlackHole = CGFloat.random(in: 0...1) < blackHoleProbability
             let body: ZDepthBody = isBlackHole ? BlackHole() : Star()
             body.zPosition = -1
@@ -269,6 +274,9 @@ class GameScene: SKScene, ObservableObject {
     }
 
     override func update(_ currentTime: TimeInterval) {
+        print(
+            "update with \(activeBlackHoles.count + activeStars.count) active stars and \(activeToppings.count) Toppings"
+        )
         if lastUpdateTime == 0 {
             lastUpdateTime = currentTime
             return
@@ -285,18 +293,20 @@ class GameScene: SKScene, ObservableObject {
         forceArrow.updateForceArrow(forceX: -xAcc, forceY: -yAcc)
 
         xSpeed += xAcc * dt * fps
-        xAcc = 0.0
-        xSpeed *= pow(xyDamping, dt * fps)
-        xOffset += xSpeed * dt * fps
-        xOffset = min(max(-centerX, xOffset), centerX)
-        xSpeed = min( max(-maxSpeedX, xSpeed), maxSpeedX )
-        
         ySpeed += yAcc * dt * fps
-        yAcc = 0.0
-        ySpeed *= pow(xyDamping, dt * fps)
-        yOffset += ySpeed * dt * fps
-        yOffset = min(max(-centerY, yOffset), centerY)
-        ySpeed = min( max(-maxSpeedY, xSpeed), maxSpeedY )
+//        xSpeed *= pow(xyDamping, dt * fps)
+//        ySpeed *= pow(xyDamping, dt * fps)
+        //        xSpeed -= dragCoef * xSpeed * dt * fps
+        //        ySpeed -= dragCoef * ySpeed * dt * fps
+        xSpeed = min(max(-maxSpeedX, xSpeed), maxSpeedX)
+        ySpeed = min(max(-maxSpeedY, ySpeed), maxSpeedY)
+        let xScrollOffset = xSpeed * dt * fps
+        let yScrollOffset = ySpeed * dt * fps
+        //                xOffset = min(max(-centerX, xOffset), centerX)
+        //                yOffset = min(max(-centerY, yOffset), centerY)
+        print("updating X axis with force \(xAcc) speed\(xSpeed) and offset \(xScrollOffset)")
+        xAcc *= 0.0
+        yAcc *= 0.0
 
         if let camera = camera {
             camera.position.y = centerY
@@ -310,13 +320,11 @@ class GameScene: SKScene, ObservableObject {
             spaceship.hideThrusters()
         }
 
-        let xScrollOffset = xOffset / bgScrollSpeed
-        let yScrollOffset = yOffset / bgScrollSpeed
-        galaxyShaderManager.addScrollH(scroll: Float(-xScrollOffset / 1000))
-        galaxyShaderManager.addScrollV(scroll: Float(-yScrollOffset / 1000))
-        tunnelShaderManager.addScrollX(scroll: Float(-xScrollOffset / 1000))
-        tunnelShaderManager.addScrollZ(scroll: Float(zSpeedAvg / 20))
-        tunnelShaderManager.addScrollRotate(scroll: Float(xSpeed / 5000))
+        galaxyShaderManager.addScrollH(scroll: Float(-xScrollOffset / 5000))
+        galaxyShaderManager.addScrollV(scroll: Float(-yScrollOffset / 5000))
+        tunnelShaderManager.addScrollX(scroll: Float(-xScrollOffset / 5000))
+        tunnelShaderManager.addScrollZ(scroll: Float(zSpeedAvg / 60))
+        tunnelShaderManager.addScrollRotate(scroll: Float(xSpeed / 3000))
         if tunnelShaderManager.isOutOfBounds() && tunnelMode {
             tunnelMode = false
             beginFreeNav()
@@ -337,8 +345,10 @@ class GameScene: SKScene, ObservableObject {
         spaceship.zRotation = CGFloat(xDelta / 128)
         spaceshipPosition = spaceship.position
         crownDelta = 0
-        xAcc += (xDelta / 80) * fps
-        yAcc += (parabola - 0.8) * fps
+
+        // Apply force based on spaceship position
+        xAcc += (xDelta / 5) / 10
+        yAcc += (parabola - 6) / 10
 
         // Galaxy detection
         let offsets = galaxyShaderManager.currentGalaxyOffsets()
@@ -423,11 +433,14 @@ class GameScene: SKScene, ObservableObject {
                         centerX: centerX,
                         centerY: centerY,
                         xOffset: -xScrollOffset / 8 * dt * fps,
-                        yOffset: yScrollOffset / 8 * dt * fps,
+                        yOffset: -yScrollOffset / 8 * dt * fps,
                     )
                     body.bodyState.zSpeed = max(
                         zSpeedLowerLimit,
-                        min(zSpeedUpperLimit, body.bodyState.zSpeed + zAccBase * dt * fps)
+                        min(
+                            zSpeedUpperLimit,
+                            body.bodyState.zSpeed + zAccBase * dt * fps
+                        )
                     )
                     zSpeedAvg +=
                         (body.bodyState.zSpeed - zSpeedAvg)
@@ -441,7 +454,7 @@ class GameScene: SKScene, ObservableObject {
                 //                }
 
                 let distance = spaceship.position.distance(to: body.position)
-                if (body.bodyState.zDepth <= 50 || !body.bodyState.hit)
+                if (body.bodyState.zDepth <= 30 || !body.bodyState.hit)
                     && !body.bodyState.isBeingTractored
                 {  // does this always protect against
                     let collisionThreshold =
@@ -561,7 +574,7 @@ class GameScene: SKScene, ObservableObject {
             }
 
             // Spawn toppings separately (using fraction of maxCelestialBodies for maxToppings; adjust fraction as needed)
-            let maxToppings = Int(Double(maxCelestialBodies) * 0.25)  // Example: 25% of celestial max; tweak based on game balance
+            let maxToppings = Int(Double(maxCelestialBodies) / 4)
             if activeToppings.count < maxToppings {
                 let toppingProb = tunnelMode ? 0.0 : toppingProbability
                 let isSpawningTopping = CGFloat.random(in: 0...1) < toppingProb
@@ -643,8 +656,8 @@ class GameScene: SKScene, ObservableObject {
         }
 
         newBody.reset(
-            xOffset: tunnelMode ? 0.0 : xOffset * 10,
-            yOffset: tunnelMode ? 0.0 : yOffset,
+            xOffset: tunnelMode ? 0.0 : xOffset * 2,
+            yOffset: tunnelMode ? 0.0 : -yOffset * 4,
             zNewSpeed: zNewSpeed
         )
         return newBody
@@ -774,7 +787,8 @@ class GameScene: SKScene, ObservableObject {
         )
         let distance = body.position.distance(to: spaceship.position)
         let denominator = max(pow(distance, gravityFalloffPower), 1.0)
-        let gravForceMagnitude = (gravitationalConstant * body.bodyState.mass) / denominator
+        let gravForceMagnitude =
+            (gravitationalConstant * body.bodyState.mass) / denominator
         applyForceToSpaceship(
             forceAngle: direction,
             forceMagnitude: gravForceMagnitude
