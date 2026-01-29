@@ -49,7 +49,7 @@ class DistortionCircle: SKEffectNode {
                     float strength = a_strength; 
                     vec2 offset = a_offset;
 
-                    // 1. Bug Eye Distortion Math (Local)
+                    // 1. Bug eye distortion
                     vec2 local_uv = v_tex_coord;
                     vec2 p = 2.0 * local_uv - 1.0;
                     float r = length(p);
@@ -61,8 +61,6 @@ class DistortionCircle: SKEffectNode {
                     vec2 distorted_local_uv = (p + 1.0) / 2.0;
 
                     // 2. Map Local to Large Background
-                    // offset: The node's position relative to the background (0.0 to 1.0 range)
-                    // scale: How large the circle is relative to the background (e.g., 40/600 = 0.066)
                     vec2 bg_uv = offset + (distorted_local_uv - 0.5) * 0.66;
 
                     // 3. Sampling
@@ -71,7 +69,7 @@ class DistortionCircle: SKEffectNode {
                         r > 1.0) {
                         gl_FragColor = vec4(0.0);
                     } else {
-                        gl_FragColor = texture2D(u_background, bg_uv); // Samples your background texture
+                        gl_FragColor = texture2D(u_background, bg_uv);
                     }
                 }
                 """,
