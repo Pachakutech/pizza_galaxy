@@ -71,10 +71,12 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "55B791A12DE6319A00E5EA12"
             BuildableName = "AuraGalaxy Watch App.app"
-            BlueprintName = "AuraGalaxy Watch App"
             ReferencedContainer = "container:AuraGalaxy.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <MetalShaderValidationSettings
+         isEnabled = "Yes">
+      </MetalShaderValidationSettings>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -88,7 +90,6 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "55B791A12DE6319A00E5EA12"
             BuildableName = "AuraGalaxy Watch App.app"
-            BlueprintName = "AuraGalaxy Watch App"
             ReferencedContainer = "container:AuraGalaxy.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

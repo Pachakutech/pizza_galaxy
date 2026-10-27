@@ -42,9 +42,9 @@ class GameScene: SKScene, ObservableObject {
     var activeStars: [ZDepthBody] = []
     var activeToppings: [ZDepthBody] = []
     var inactiveZBodies: [ZDepthBody] = []
+    var scoreboard = SKNode()
+    var scoreboardIcon = SKSpriteNode(imageNamed: "yellow_star")
     private var scores: [ToppingType: Int] = [:]
-    private var scoreboard = SKNode()
-    private var scoreboardIcon = SKSpriteNode(imageNamed: "yellow_star")
     private var scoreboardScore = SKLabelNode(text: "")
     private var scoreBoardTimer: Timer?
     private var lastScoreTimestamp: TimeInterval = 0.0
@@ -81,24 +81,24 @@ class GameScene: SKScene, ObservableObject {
     private var timeOnGalaxy = 0
     private var tractorBeamAnimator: TractorBeamAnimator!
     private var forceArrow = ForceArrow()
-
+    
     override init(size: CGSize) {
         super.init(size: size)
         setupAudioSession()
         setupScene()
         tractorBeamAnimator = TractorBeamAnimator(scene: self)
     }
-
+    
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         setupAudioSession()
         setupScene()
         tractorBeamAnimator = TractorBeamAnimator(scene: self)
     }
-
+    
     private func setupScene() {
         physicsWorld.gravity = CGVector(dx: 0, dy: 0)
-
+        
         let cameraNode = SKCameraNode()
         cameraNode.position = CGPoint(x: size.width / 2, y: size.height / 2)
         camera = cameraNode
@@ -107,13 +107,13 @@ class GameScene: SKScene, ObservableObject {
             camera.position.x = centerX
         }
         addChild(cameraNode)
-
+        
         backgroundSprite = SKSpriteNode(color: .white, size: size)
         backgroundSprite?.shader = tunnelShaderManager.getTunnelShader()
         backgroundSprite?.position = CGPoint(x: centerX, y: centerY)
         backgroundSprite?.zPosition = -3
         addChild(backgroundSprite!)
-
+        
         if let emitter = SKEmitterNode(fileNamed: "rainbow.sks") {
             rainbowEffect = emitter
             rainbowEffect?.zPosition = -2
@@ -122,13 +122,13 @@ class GameScene: SKScene, ObservableObject {
         } else {
             print("Error: Failed to load rainbow.sks")
         }
-
+        
         spaceship = Spaceship()
         spaceship.position = CGPoint(x: size.width / 2, y: size.height / 2)
         spaceshipPosition = spaceship.position
         spaceship.zPosition = 10
         addChild(spaceship)
-
+        
         for _ in 0..<maxCelestialBodies / 4 {
             let body: ZDepthBody = Topping()
             body.zPosition = -1
@@ -142,12 +142,12 @@ class GameScene: SKScene, ObservableObject {
             body.isHidden = true
             inactiveZBodies.append(body)
         }
-
+        
         scoreboardIcon.size.width = 20
         scoreboardIcon.size.height = 20
         scoreboardIcon.position = CGPoint(x: 24.0, y: 0.0)
         scoreboard.addChild(scoreboardIcon)
-
+        
         scoreboardScore.horizontalAlignmentMode = .right
         scoreboardScore.fontSize = 22
         scoreboardScore.fontColor = .white
@@ -156,21 +156,21 @@ class GameScene: SKScene, ObservableObject {
             y: scoreboardIcon.position.y - 9.0
         )
         scoreboard.addChild(scoreboardScore)
-
+        
         scoreboard.position = CGPoint(
             x: size.width * 4 / 5,
             y: size.height * 4 / 5
         )
         scoreboard.isHidden = true
         addChild(scoreboard)
-
+        
         forceArrow.position = CGPoint(
             x: size.width * 4 / 5,
             y: size.height * 2 / 3
         )
         addChild(forceArrow)
     }
-
+    
     private func setupAudioSession() {
         print("setting up audio session")
         do {
@@ -194,13 +194,13 @@ class GameScene: SKScene, ObservableObject {
         collisionSoundAction = soundAction
         print("Collision sound preloaded")
     }
-
+    
     func handleTap(at location: CGPoint) {
         print("Tap location: \(location)")
         let touchedNodes = nodes(at: location)
         var closestBody: ZDepthBody? = nil
         var minDist: CGFloat = .greatestFiniteMagnitude
-
+        
         // Check touched + find nearest active body for comparison
         for node in touchedNodes {
             print(
@@ -209,7 +209,7 @@ class GameScene: SKScene, ObservableObject {
             var current: SKNode? = node
             while current != nil {
                 if let body = current as? CelestialBody,
-                    !body.bodyState.isBeingTractored && !body.bodyState.hit
+                   !body.bodyState.isBeingTractored && !body.bodyState.hit
                 {
                     print(
                         "Handling body: \(type(of: body)), frame=\(body.calculateAccumulatedFrame())"
@@ -220,7 +220,7 @@ class GameScene: SKScene, ObservableObject {
                 current = current?.parent
             }
         }
-
+        
         // Find nearest active body for miss debug
         for body in activeStars + activeBlackHoles {
             let bodyFrame = body.calculateAccumulatedFrame()
@@ -237,13 +237,13 @@ class GameScene: SKScene, ObservableObject {
         }
         print("No body touched")
     }
-
+    
     func distanceFromRect(_ rect: CGRect, toPoint point: CGPoint) -> CGFloat {
         let dx = max(rect.minX - point.x, 0, point.x - rect.maxX)
         let dy = max(rect.minY - point.y, 0, point.y - rect.maxY)
         return sqrt(dx * dx + dy * dy)
     }
-
+    
     private func handleCelestialBodyTap(_ body: CelestialBody) {
         guard !tunnelMode else {
             print("Tap ignored: Not in FreeNav mode")
@@ -252,14 +252,14 @@ class GameScene: SKScene, ObservableObject {
         print("got tap on a star? \(body is Star)")
         tractorBeamAnimator.startDragWithBeam(on: body, from: spaceship)
     }
-
+    
     private func classifyCompassPoint(offsetH: Float, offsetV: Float)
-        -> CompassPoint
+    -> CompassPoint
     {
         let absH = abs(offsetH)
         let absV = abs(offsetV)
         let isDiagonal = abs(absH - absV) < 0.5
-
+        
         if isDiagonal {
             if offsetH > 0 && offsetV > 0 { return .topRight }
             if offsetH > 0 && offsetV < 0 { return .bottomRight }
@@ -272,7 +272,7 @@ class GameScene: SKScene, ObservableObject {
             return offsetV > 0 ? .top : .bottom
         }
     }
-
+    
     override func update(_ currentTime: TimeInterval) {
         print(
             "update with \(activeBlackHoles.count + activeStars.count) active stars and \(activeToppings.count) Toppings"
@@ -283,19 +283,19 @@ class GameScene: SKScene, ObservableObject {
         }
         let dt = CGFloat(currentTime - lastUpdateTime)
         lastUpdateTime = currentTime
-
+        
         frameCount += Int(fps * dt)
-
+        
         let zAccBase = zSpeedDelta
         zSpeedDelta = 0.0
         zSpeedAvg = (7 * zSpeedAvg + zSpeedDefault) / 8
-
+        
         forceArrow.updateForceArrow(forceX: -xAcc, forceY: -yAcc)
-
+        
         xSpeed += xAcc * dt * fps
         ySpeed += yAcc * dt * fps
-//        xSpeed *= pow(xyDamping, dt * fps)
-//        ySpeed *= pow(xyDamping, dt * fps)
+        //        xSpeed *= pow(xyDamping, dt * fps)
+        //        ySpeed *= pow(xyDamping, dt * fps)
         //        xSpeed -= dragCoef * xSpeed * dt * fps
         //        ySpeed -= dragCoef * ySpeed * dt * fps
         xSpeed = min(max(-maxSpeedX, xSpeed), maxSpeedX)
@@ -307,19 +307,14 @@ class GameScene: SKScene, ObservableObject {
         print("updating X axis with force \(xAcc) speed\(xSpeed) and offset \(xScrollOffset)")
         xAcc *= 0.0
         yAcc *= 0.0
-
-        if let camera = camera {
-            camera.position.y = centerY
-            camera.position.x = centerX
-        }
-
+        
         if crownDelta != 0 {
             lastCrownInputTime = currentTime
             spaceship.applyThrust(crownDelta: crownDelta)
         } else if currentTime - lastCrownInputTime > 0.25 {
             spaceship.hideThrusters()
         }
-
+        
         galaxyShaderManager.addScrollH(scroll: Float(-xScrollOffset / 5000))
         galaxyShaderManager.addScrollV(scroll: Float(-yScrollOffset / 5000))
         tunnelShaderManager.addScrollX(scroll: Float(-xScrollOffset / 5000))
@@ -329,7 +324,7 @@ class GameScene: SKScene, ObservableObject {
             tunnelMode = false
             beginFreeNav()
         }
-
+        
         // apply force of spaceship position to world
         let newX = min(
             max(size.width * 0.1, spaceship.position.x + CGFloat(crownDelta)),
@@ -345,17 +340,17 @@ class GameScene: SKScene, ObservableObject {
         spaceship.zRotation = CGFloat(xDelta / 128)
         spaceshipPosition = spaceship.position
         crownDelta = 0
-
+        
         // Apply force based on spaceship position
         xAcc += (xDelta / 5) / 10
         yAcc += (parabola - 6) / 10
-
+        
         // Galaxy detection
         let offsets = galaxyShaderManager.currentGalaxyOffsets()
         var isGalaxyVisible = false
         var closestOffset: (Float, Float)? = nil
         var minDistance: Float = .greatestFiniteMagnitude
-
+        
         for (offsetH, offsetV) in offsets {
             let distance = sqrt(offsetH * offsetH + offsetV * offsetV)
             if distance < minDistance {
@@ -367,7 +362,7 @@ class GameScene: SKScene, ObservableObject {
                 break
             }
         }
-
+        
         if let rainbow = rainbowEffect {
             if isGalaxyVisible || tunnelMode {
                 rainbow.isHidden = true
@@ -387,7 +382,7 @@ class GameScene: SKScene, ObservableObject {
                 rainbow.isHidden = true
             }
         }
-
+        
         if isGalaxyVisible {
             timeOnGalaxy += Int(60 * dt)
         } else {
@@ -420,7 +415,7 @@ class GameScene: SKScene, ObservableObject {
         //                break
         //            }
         //        }
-
+        
         // Perform apparent physics
         var bodiesToReserve: [ZDepthBody] = []
         for body in activeBlackHoles + activeStars + activeToppings {
@@ -443,22 +438,22 @@ class GameScene: SKScene, ObservableObject {
                         )
                     )
                     zSpeedAvg +=
-                        (body.bodyState.zSpeed - zSpeedAvg)
-                        / CGFloat(activeStars.count + 1)
+                    (body.bodyState.zSpeed - zSpeedAvg)
+                    / CGFloat(activeStars.count + 1)
                 }
-
+                
                 //                if body is Star {
                 //                    print(
                 //                        "Active star: pos=\(body.position), hidden=\(body.isHidden), scale=\(body.xScale), zDepth=\(body.zDepth) is \(body.position.y >= 0 && body.position.y < size.height && body.position.x >= 0 && body.position.x < size.width ? "" : "not") within bounds"
                 //                    )
                 //                }
-
+                
                 let distance = spaceship.position.distance(to: body.position)
                 if (body.bodyState.zDepth <= 30 || !body.bodyState.hit)
                     && !body.bodyState.isBeingTractored
                 {  // does this always protect against
                     let collisionThreshold =
-                        (spaceship.size.width)
+                    (spaceship.size.width)
                     if distance < collisionThreshold && (!body.bodyState.hit) {
                         if body is BlackHole {
                             ySpeed = 0.0
@@ -468,18 +463,7 @@ class GameScene: SKScene, ObservableObject {
                             if let soundAction = collisionSoundAction {
                                 run(soundAction)
                             }
-                            if let topping = body as? Topping {
-                                let score =
-                                    (scores[topping.toppingType] ?? 0) + 1
-                                scores[topping.toppingType] = score
-                                // Show score for topping type
-                                scoreboardIcon.texture =
-                                    topping.toppingType.texture
-                                scoreboardScore.text = "\(score)"
-                                scoreboard.isHidden = false
-                                lastScoreTimestamp = currentTime
-
-                            }
+                            awardTopping(body)
                             tractorBeamAnimator.startPostAnimation(
                                 on: body,
                                 from: spaceship
@@ -489,13 +473,13 @@ class GameScene: SKScene, ObservableObject {
                     }
                     applyGravitationalForce(from: body)
                 }
-
+                
                 if let blackHole = body as? BlackHole {
                     blackHole.updateDistortion()
                 }
-
+                
                 if body.bodyState.zDepth <= 90,
-                    let blackHole = body as? BlackHole
+                   let blackHole = body as? BlackHole
                 {
                     let jetHitBoxes = blackHole.getJetHitBoxes()
                     for (hitBox, isTop) in jetHitBoxes {
@@ -507,7 +491,7 @@ class GameScene: SKScene, ObservableObject {
                             to: hitBoxWorldPosition
                         )
                         let collisionThreshold =
-                            (spaceship.size.width / 2 + hitBox.size.width / 2)
+                        (spaceship.size.width / 2 + hitBox.size.width / 2)
                         if distanceToHitBox < collisionThreshold {
                             applyJetForce(blackHole, hitBox, isTop)
                         }
@@ -515,11 +499,11 @@ class GameScene: SKScene, ObservableObject {
                 }
             }
         }
-
+        
         if isAnimatingOrbit {
             if let collidedBlackHole = animatingBlackHole {
                 collidedBlackHole.bodyState.zDepth -=
-                    collidedBlackHole.bodyState.zSpeed
+                collidedBlackHole.bodyState.zSpeed
                 if collidedBlackHole.bodyState.zDepth <= 0 {
                     collidedBlackHole.isHidden = true
                     collidedBlackHole.removeFromParent()
@@ -529,7 +513,7 @@ class GameScene: SKScene, ObservableObject {
             }
             return
         }
-
+        
         for body in bodiesToReserve {
             if body.bodyState.isBeingTractored { continue }
             body.isHidden = true
@@ -557,13 +541,13 @@ class GameScene: SKScene, ObservableObject {
         //            )
         //        }
         //
-
+        
         // Spawn new items
         if frameCount % spawnIntervalFrames == 0 && !isAnimatingOrbit {
             // Spawn celestials (black holes and stars)
             if activeBlackHoles.count + activeStars.count < maxCelestialBodies {
                 let isBlackHole =
-                    CGFloat.random(in: 0...1) < blackHoleProbability
+                CGFloat.random(in: 0...1) < blackHoleProbability
                 _ = spawnAndActivateZBody(
                     isBlackHole: isBlackHole,
                     isTopping: false,
@@ -572,7 +556,7 @@ class GameScene: SKScene, ObservableObject {
                     zNewSpeed: zSpeedAvg
                 )
             }
-
+            
             // Spawn toppings separately (using fraction of maxCelestialBodies for maxToppings; adjust fraction as needed)
             let maxToppings = Int(Double(maxCelestialBodies) / 4)
             if activeToppings.count < maxToppings {
@@ -589,13 +573,34 @@ class GameScene: SKScene, ObservableObject {
                 }
             }
         }
-
+        
         spaceshipPosition = spaceship.position
         if !scoreboard.isHidden
             && currentTime - lastScoreTimestamp >= lastScoreDuration
         {
             scoreboard.isHidden = true
         }
+    }
+    
+    func awardTopping(_ body: ZDepthBody) {
+        guard !body.bodyState.hit else { return }
+        body.bodyState.hit = true
+        zSpeedDelta += zSpeedDefault * 3 / 4
+        if let s = collisionSoundAction { run(s) }
+        if let topping = body as? Topping {
+            let score = (scores[topping.toppingType] ?? 0) + 1
+            scores[topping.toppingType] = score
+            scoreboardIcon.texture = topping.toppingType.texture
+            scoreboardScore.text = "\(score)"
+            scoreboard.isHidden = false
+            lastScoreTimestamp = lastUpdateTime // use whatever currentTime var you keep
+        } }
+    var scoreboardTarget: CGPoint { // where toppings should fly to
+        scoreboard.convert(scoreboardIcon.position, to: self)
+    }
+    func pulseScoreboard() {
+        scoreboard.removeAction(forKey: "pulse")
+        scoreboard.run(.sequence([.scale(to: 1.3, duration: 0.08), .scale(to: 1.0, duration: 0.12)]), withKey: "pulse")
     }
 
     private func spawnAndActivateZBody(

@@ -49,7 +49,6 @@ class DistortionCircle: SKEffectNode {
                     float strength = a_strength; 
                     vec2 offset = a_offset;
 
-                    // 1. Bug eye distortion
                     vec2 local_uv = v_tex_coord;
                     vec2 p = 2.0 * local_uv - 1.0;
                     float r = length(p);
@@ -57,13 +56,10 @@ class DistortionCircle: SKEffectNode {
                     float distortion = 1.0 + power * (r * r);
                     p /= distortion;
                     
-                    // Convert distorted p back to local 0.0-1.0 range
                     vec2 distorted_local_uv = (p + 1.0) / 2.0;
 
-                    // 2. Map Local to Large Background
                     vec2 bg_uv = offset + (distorted_local_uv - 0.5) * 0.66;
 
-                    // 3. Sampling
                     if (distorted_local_uv.x < 0.0 || distorted_local_uv.x > 1.0 || 
                         distorted_local_uv.y < 0.0 || distorted_local_uv.y > 1.0 ||
                         r > 1.0) {

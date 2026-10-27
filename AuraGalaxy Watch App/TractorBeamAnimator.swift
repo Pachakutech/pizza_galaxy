@@ -10,139 +10,69 @@ import SpriteKit
 @MainActor
 class TractorBeamAnimator {
     private weak var scene: GameScene?
-
+    
     init(scene: GameScene) {
         self.scene = scene
     }
-
-    func startDragWithBeam(on body: CelestialBody, from spaceship: Spaceship) {
+    
+    func startDragWithBeam(on body: CelestialBody, from ship: Spaceship) {
         guard let scene = scene else { return }
-        print("starting tractor beam animation")
-
         body.bodyState.isBeingTractored = true
-
-        // Load tractor beam emitter
-        let beamEmitter = SKEmitterNode(fileNamed: "TractorBeam.sks")!
-        beamEmitter.position = spaceship.position
-        beamEmitter.zPosition = 5  // Above bodies, below spaceship
-        // Remove targetNode if causing issues; particles will be in emitter's coord system
-        // beamEmitter.targetNode = scene
-
-        // Configure like jets: low birthrate, no ranges for thin line
-        beamEmitter.particleBirthRate = 20  // Low like jets (10-20 for visibility without density)
-        beamEmitter.emissionAngle = 10
-        beamEmitter.emissionAngleRange = 0  // No spread for thin beam
-        beamEmitter.particleSpeed = 300  // Higher speed for longer reach
-        beamEmitter.particleSpeedRange = 0
-        beamEmitter.particleScale = 0.01  // Small scale
-        beamEmitter.particleScaleRange = 0
-        beamEmitter.particleLifetimeRange = 0
-        beamEmitter.particleAlpha = 1.0
-        beamEmitter.particleAlphaRange = 0
-        beamEmitter.particleAlphaSpeed = -0.3  // Gentle fade
-        beamEmitter.particlePositionRange = CGVector(dx: 1, dy: 1)  // Tiny range for line thickness
-
-        scene.addChild(beamEmitter)
-        beamEmitter.advanceSimulationTime(1.0)  // Kickstart particles
-
-        // Phase 1: Drag to spaceship (ease-in)
-        let dragDuration: TimeInterval = 2.0
-        let dragAction = SKAction.customAction(withDuration: dragDuration) {
-            node,
-            time in
-            let t = CGFloat(time / dragDuration)
-            let easedT = t * t  // Quadratic ease-in
-            node.position = CGPoint(
-                x: spaceship.position.x
-                    + (body.position.x - spaceship.position.x) * (1 - easedT),
-                y: spaceship.position.y
-                    + (body.position.y - spaceship.position.y) * (1 - easedT)
-            )
-            // Update beam
-            let dx = body.position.x - spaceship.position.x
-            let dy = body.position.y - spaceship.position.y
-            let dist = sqrt(dx * dx + dy * dy)
-            let angleRad = atan2(dy, dx)
-            beamEmitter.position = spaceship.position
-            beamEmitter.zRotation = angleRad + .pi
-            beamEmitter.particleLifetime = max(
-                0.5,
-                dist / beamEmitter.particleSpeed
-            )  // Proportional length
-            if dist < 10 {  // Stop near collision to avoid hop
-                beamEmitter.particleBirthRate = 0
-            }
+        let beam = SKSpriteNode(color: .cyan, size: CGSize(width: 1, height: 2))
+        beam.anchorPoint = CGPoint(x: 0, y: 0.5) // pivot at the ship end
+        beam.zPosition = 5
+        beam.alpha = 0.8
+        scene.addChild(beam)
+        let start = body.position // captured ONCE
+        let dur: TimeInterval = 2.0
+        let drag = SKAction.customAction(withDuration: dur) {
+            node, elapsed in let t = CGFloat(elapsed / dur)
+            let e = t * t
+            let p = CGPoint(x: start.x + (ship.position.x - start.x) * e, y: start.y + (ship.position.y - start.y) * e)
+            node.position = p // body moves ship-ward (live ship pos)
+            let dx = p.x - ship.position.x, dy = p.y - ship.position.y
+            beam.position = ship.position
+            beam.zRotation = atan2(dy, dx)
+            beam.xScale = hypot(dx, dy) // 1pt wide sprite -> length
         }
-
-        // Stop emitting after drag
-        let stopBeam = SKAction.run {
-            beamEmitter.particleBirthRate = 0
-        }
-
-        // Cleanup
-        let cleanup = SKAction.run {
-            print("cleaning up tractor animation")
-            body.bodyState.isBeingTractored = false
-            beamEmitter.removeFromParent()
-            scene.activeStars.removeAll { $0 === body }
-            scene.activeBlackHoles.removeAll { $0 === body }
-        }
-
-        body.run(
-            SKAction.sequence([
-                dragAction, stopBeam, cleanup,
-                _getPostAnimation(in: scene, on: body, from: spaceship),
-            ])
-        )
-
-        // Optional: BlackHole special handling
-        if let blackHole = body as? BlackHole {
-            // blackHole.hideJets()  // Implement if needed
-        }
+        body.run(.sequence([drag, .run {
+            beam.removeFromParent()
+        }, _getPostAnimation(in: scene, on: body, from: ship)]))
     }
+    
     func startPostAnimation(on body: ZDepthBody, from spaceship: Spaceship) {
         guard let scene = scene else { return }
         body.run(_getPostAnimation(in: scene, on: body, from: spaceship))
     }
-
-    func _getPostAnimation(
-        in scene: GameScene,
-        on body: ZDepthBody,
-        from spaceship: Spaceship
-    )
-        -> SKAction
-    {
-        // Phase 2: Grow, fade, move to upper-right (ease-out) for non-blackholes
-        let postDuration: TimeInterval = 3.0
-        let upperRight = CGPoint(
-            x: scene.size.width * 2,
-            y: scene.size.height * 2
-        )
-        let grow = SKAction.scale(to: 3.0, duration: postDuration)
-        let fade = SKAction.fadeOut(withDuration: postDuration)
-        fade.timingMode = .easeIn
-        let move = SKAction.customAction(withDuration: postDuration) {
-            node,
-            time in
-            let t = CGFloat(time / postDuration)
-            let easedT = 1 - (1 - t) * (1 - t)  // Quadratic ease-out
-            node.position = CGPoint(
-                x: spaceship.position.x + (upperRight.x - spaceship.position.x)
-                    * easedT,
-                y: spaceship.position.y + (upperRight.y - spaceship.position.y)
-                    * easedT
-            )
+    
+    func _getPostAnimation(in scene: GameScene, on body: ZDepthBody, from ship: Spaceship) -> SKAction {
+        let dur: TimeInterval = 0.9
+        let begin = SKAction.run {
+            body.bodyState.isBeingTractored = true // update loop must not touch it
+            scene.awardTopping(body) // no-op if already awarded
+        } // Curved flight: quadratic Bezier ship -> scoreboard, bulging up then right.
+        let fly = SKAction.customAction(withDuration: dur) {
+            node, elapsed in let t = CGFloat(elapsed / dur)
+            let e = t * t * (3 - 2 * t) // smoothstep
+            let p0 = ship.position
+            let p2 = scene.scoreboardTarget // live: survives layout changes
+            let p1 = CGPoint(x: p0.x, y: p2.y) // control point
+            let u = 1 - e
+            node.position = CGPoint( x: u*u*p0.x + 2*u*e*p1.x + e*e*p2.x, y: u*u*p0.y + 2*u*e*p1.y + e*e*p2.y)
         }
-        let postGroup = SKAction.group([grow, move])
-
-        // Cleanup
-        let cleanup = SKAction.run {
+        let shrink = SKAction.scale(to: 0.25, duration: dur) // shrinks into the icon
+        shrink.timingMode = .easeIn
+        let spin = SKAction.rotate(byAngle: .pi * 2, duration: dur)
+        let fadeTail = SKAction.sequence([.wait(forDuration: dur * 0.8), .fadeOut(withDuration: dur * 0.2)])
+        let arrive = SKAction.run {
+            scene.pulseScoreboard()
             scene.activeStars.removeAll { $0 === body }
             scene.activeBlackHoles.removeAll { $0 === body }
-            scene.inactiveZBodies.append(body)  // Recycle
+            body.zRotation = 0
+            scene.inactiveZBodies.append(body)
             body.isHidden = true
+            body.bodyState.isBeingTractored = false // safe now: hidden and recycled
         }
-
-        return SKAction.sequence([postGroup, cleanup])
+        return .sequence([begin, .group([fly, shrink, spin, fadeTail]), arrive])
     }
-}
+   }
