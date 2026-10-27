@@ -63,7 +63,7 @@ class GameScene: SKScene, ObservableObject {
     private var animatingBlackHole: BlackHole?
     private var frameCount: Int = 0
     private var zSpeedDelta: CGFloat = 0.0
-    private var zSpeedAvg: CGFloat = zSpeedDefault
+    private var worldSpeed: CGFloat = zSpeedDefault
     private var collisionSoundAction: SKAction?
     private var backgroundSprite: SKSpriteNode?
     private var rainbowEffect: SKEmitterNode?
@@ -196,48 +196,35 @@ class GameScene: SKScene, ObservableObject {
     }
     
     func handleTap(at location: CGPoint) {
-        print("Tap location: \(location)")
-        let touchedNodes = nodes(at: location)
-        var closestBody: ZDepthBody? = nil
-        var minDist: CGFloat = .greatestFiniteMagnitude
-        
-        // Check touched + find nearest active body for comparison
-        for node in touchedNodes {
-            print(
-                "Touched: type=\(String(describing: type(of: node))), frame=\(node.calculateAccumulatedFrame())"
-            )
+        guard !tunnelMode else { return } // 1. Exact hit wins
+        for node in nodes(at: location) {
             var current: SKNode? = node
-            while current != nil {
-                if let body = current as? CelestialBody,
-                   !body.bodyState.isBeingTractored && !body.bodyState.hit
-                {
-                    print(
-                        "Handling body: \(type(of: body)), frame=\(body.calculateAccumulatedFrame())"
-                    )
+            while let n = current {
+                if let body = n as? CelestialBody, isTappable(body) {
                     handleCelestialBodyTap(body)
                     return
                 }
-                current = current?.parent
+                current = n.parent
             }
-        }
-        
-        // Find nearest active body for miss debug
+        } // 2. Forgiving fallback: nearest tappable body within tolerance
+        let tolerance: CGFloat = 22 // pt; tune on a real watch
+        var best: CelestialBody?
+        var bestScore = CGFloat.greatestFiniteMagnitude
         for body in activeStars + activeBlackHoles {
-            let bodyFrame = body.calculateAccumulatedFrame()
-            let dist = distanceFromRect(bodyFrame, toPoint: location)
-            if dist < minDist {
-                minDist = dist
-                closestBody = body
-            }
+            guard let b = body as? CelestialBody, isTappable(b) else { continue }
+            let d = distanceFromRect(b.calculateAccumulatedFrame(), toPoint: location) // d is 0 inside the frame, so also break ties by center distance
+            let c = hypot(b.position.x - location.x, b.position.y - location.y)
+            guard d <= tolerance else { continue }
+            let score = d * 1000 + c // frame distance first, then center
+            if score < bestScore { bestScore = score; best = b }
         }
-        if let closest = closestBody {
-            print(
-                "Missed closest \(type(of: closest)): dist to frame=\(minDist), its frame=\(closest.calculateAccumulatedFrame())"
-            )
-        }
-        print("No body touched")
+        if let best { handleCelestialBodyTap(best) }
     }
     
+    private func isTappable(_ b: CelestialBody) -> Bool {
+        !b.isHidden && b.bodyState.zDepth < 40 && !b.bodyState.isBeingTractored && !b.bodyState.hit
+    }
+   
     func distanceFromRect(_ rect: CGRect, toPoint point: CGPoint) -> CGFloat {
         let dx = max(rect.minX - point.x, 0, point.x - rect.maxX)
         let dy = max(rect.minY - point.y, 0, point.y - rect.maxY)
@@ -288,7 +275,10 @@ class GameScene: SKScene, ObservableObject {
         
         let zAccBase = zSpeedDelta
         zSpeedDelta = 0.0
-        zSpeedAvg = (7 * zSpeedAvg + zSpeedDefault) / 8
+        worldSpeed += zSpeedDelta // impulse from collisions (0.15 each)
+        zSpeedDelta = 0
+        worldSpeed += (zSpeedDefault - worldSpeed) * min(1, 1.5 * dt) // ~0.7 s relax
+        worldSpeed = min(worldSpeed, zSpeedDefault * 6)
         
         forceArrow.updateForceArrow(forceX: -xAcc, forceY: -yAcc)
         
@@ -318,7 +308,7 @@ class GameScene: SKScene, ObservableObject {
         galaxyShaderManager.addScrollH(scroll: Float(-xScrollOffset / 5000))
         galaxyShaderManager.addScrollV(scroll: Float(-yScrollOffset / 5000))
         tunnelShaderManager.addScrollX(scroll: Float(-xScrollOffset / 5000))
-        tunnelShaderManager.addScrollZ(scroll: Float(zSpeedAvg / 60))
+        tunnelShaderManager.addScrollZ(scroll: Float(worldSpeed / 60))
         tunnelShaderManager.addScrollRotate(scroll: Float(xSpeed / 3000))
         if tunnelShaderManager.isOutOfBounds() && tunnelMode {
             tunnelMode = false
@@ -419,7 +409,7 @@ class GameScene: SKScene, ObservableObject {
         // Perform apparent physics
         var bodiesToReserve: [ZDepthBody] = []
         for body in activeBlackHoles + activeStars + activeToppings {
-            body.bodyState.zDepth -= body.bodyState.zSpeed * dt * fps
+            body.bodyState.zDepth -= worldSpeed * body.bodyState.speedScale * dt * fps
             if body.bodyState.zDepth <= 0 {
                 bodiesToReserve.append(body)
             } else {
@@ -437,8 +427,8 @@ class GameScene: SKScene, ObservableObject {
                             body.bodyState.zSpeed + zAccBase * dt * fps
                         )
                     )
-                    zSpeedAvg +=
-                    (body.bodyState.zSpeed - zSpeedAvg)
+                    worldSpeed +=
+                    (body.bodyState.zSpeed - worldSpeed)
                     / CGFloat(activeStars.count + 1)
                 }
                 
@@ -447,6 +437,10 @@ class GameScene: SKScene, ObservableObject {
                 //                        "Active star: pos=\(body.position), hidden=\(body.isHidden), scale=\(body.xScale), zDepth=\(body.zDepth) is \(body.position.y >= 0 && body.position.y < size.height && body.position.x >= 0 && body.position.x < size.width ? "" : "not") within bounds"
                 //                    )
                 //                }
+                
+                if body.bodyState.isBeingTractored {
+                    print("update skipping tractored \(body.bodyState.zDepth)")
+                }
                 
                 let distance = spaceship.position.distance(to: body.position)
                 if (body.bodyState.zDepth <= 30 || !body.bodyState.hit)
@@ -518,7 +512,7 @@ class GameScene: SKScene, ObservableObject {
             if body.bodyState.isBeingTractored { continue }
             body.isHidden = true
             body.removeFromParent()
-            body.bodyState.zSpeed = zSpeedAvg
+            body.bodyState.zSpeed = worldSpeed
             activeBlackHoles.removeAll { $0 === body }
             activeStars.removeAll { $0 === body }
             activeToppings.removeAll { $0 === body }
@@ -553,7 +547,7 @@ class GameScene: SKScene, ObservableObject {
                     isTopping: false,
                     xOffset: xScrollOffset,
                     yOffset: -yScrollOffset,
-                    zNewSpeed: zSpeedAvg
+                    zNewSpeed: worldSpeed
                 )
             }
             
@@ -568,7 +562,7 @@ class GameScene: SKScene, ObservableObject {
                         isTopping: true,
                         xOffset: xScrollOffset,
                         yOffset: -yScrollOffset,
-                        zNewSpeed: zSpeedAvg
+                        zNewSpeed: worldSpeed
                     )
                 }
             }
@@ -643,6 +637,10 @@ class GameScene: SKScene, ObservableObject {
 
         newBody.zPosition = -1
         if newBody.parent == nil {
+//            let ring = SKShapeNode(circleOfRadius: 8)
+//            ring.strokeColor = .red; ring.lineWidth = 1.5; ring.zPosition = 6
+//            scene.addChild(ring) // in the customAction:
+//            ring.position = p // in the cleanup: ring.removeFromParent()
             addChild(newBody)
         }
 
@@ -665,6 +663,7 @@ class GameScene: SKScene, ObservableObject {
             yOffset: tunnelMode ? 0.0 : -yOffset * 4,
             zNewSpeed: zNewSpeed
         )
+        newBody.bodyState.speedScale = isTopping ? 1.0 : CGFloat.random(in: 0.5...1.0)
         return newBody
     }
 
@@ -777,7 +776,7 @@ class GameScene: SKScene, ObservableObject {
             )
             self?.activeBlackHoles.removeAll()
             self?.activeStars.removeAll()
-            self?.zSpeedAvg = zSpeedUpperLimit
+            self?.worldSpeed = zSpeedUpperLimit
             self?.animatingBlackHole = nil
         }
         run(SKAction.sequence([wait, endAnimation]))

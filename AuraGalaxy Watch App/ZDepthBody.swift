@@ -21,6 +21,7 @@ struct BodyState {
     var yInitialOffset: CGFloat = 0
     var currentX: CGFloat = 0
     var currentY: CGFloat = 0
+    var speedScale: CGFloat = 1
     var xCumulativeOffset: CGFloat = 0
     var yCumulativeOffset: CGFloat = 0
     var isBeingTractored: Bool = false  // Flag to prevent z-updates/recycling during animation
@@ -39,22 +40,29 @@ protocol ZDepthBody: SKNode {
 }
 
 extension ZDepthBody {
+    var depthProgress: CGFloat {
+        let u = bodyState.zDepth / 100
+        let c: CGFloat = 0.15
+        let far = 1 / (1 + c)
+        let near = 1 / c
+        return (1 / (u + c) - far) / (near - far)
+    }
+
     func updatePositionAndScale(
         centerX: CGFloat,
         centerY: CGFloat,
         xOffset: CGFloat,
         yOffset: CGFloat
     ) {
+        let f = depthProgress
         let firstTime =
             bodyState.xCumulativeOffset == 0 && bodyState.yCumulativeOffset == 0
         bodyState.xCumulativeOffset += xOffset
-        bodyState.yCumulativeOffset += yOffset * (1 - bodyState.zDepth/100)
+        bodyState.yCumulativeOffset += yOffset * f
 
-        let scale =
-            0.1 + (1 - bodyState.zDepth / 100) * 0.9
+        let scale = 0.1 + f * 0.9
         setScale(scale)
-        let radialFactor =
-            (100 - bodyState.zDepth) / 100 * bodyState.radialMagnitude
+        let radialFactor = f * bodyState.radialMagnitude
         bodyState.currentX =
             centerX - cos(bodyState.direction) * radialFactor
             - bodyState.xInitialOffset

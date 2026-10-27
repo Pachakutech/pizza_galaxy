@@ -16,6 +16,7 @@ class TractorBeamAnimator {
     }
     
     func startDragWithBeam(on body: CelestialBody, from ship: Spaceship) {
+        print("BEAM start: \(type(of: body)) pos=\(body.position) scale=\(body.xScale) alpha=\(body.alpha) hidden=\(body.isHidden) z=\(body.zPosition) zDepth=\(body.bodyState.zDepth) parent=\(String(describing: body.parent)) tractored=\(body.bodyState.isBeingTractored) ship=\(ship.position)")
         guard let scene = scene else { return }
         body.bodyState.isBeingTractored = true
         let beam = SKSpriteNode(color: .cyan, size: CGSize(width: 1, height: 2))
@@ -53,6 +54,7 @@ class TractorBeamAnimator {
         } // Curved flight: quadratic Bezier ship -> scoreboard, bulging up then right.
         let fly = SKAction.customAction(withDuration: dur) {
             node, elapsed in let t = CGFloat(elapsed / dur)
+//            if Int(elapsed * 4) != Int((elapsed - 0.016) * 4) { print("BEAM t=\(t) body=\(node.position) scale=\(node.xScale) alpha=\(node.alpha) ship=\(ship.position) dist=\(hypot(dx, dy))") }
             let e = t * t * (3 - 2 * t) // smoothstep
             let p0 = ship.position
             let p2 = scene.scoreboardTarget // live: survives layout changes
